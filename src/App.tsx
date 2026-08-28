@@ -1,6 +1,6 @@
 import { AppLayout } from "@/components/layouts/app-layout";
 import { ThemeProvider } from "@/components/theme-provider";
-import { DirectionProvider } from "@/components/ui/direction";
+import { DirectionProvider } from "@/components/primitives/direction";
 import { OptionsPage } from "@/features/options/pages/options-page";
 import { QueryProvider } from "@/lib/query/query-provider";
 

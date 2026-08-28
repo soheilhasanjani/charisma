@@ -1,12 +1,12 @@
 import { Monitor, Moon, Sun } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/primitives/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/components/primitives/dropdown-menu";
 import { useTheme } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 

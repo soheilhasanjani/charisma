@@ -1,5 +1,7 @@
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/primitives/button";
+import { Skeleton } from "@/components/primitives/skeleton";
+import { DataTable } from "@/components/patterns/data-table";
+import { optionsColumns } from "@/features/options/columns";
 import { useOptionsSnapshot } from "@/features/options/hooks/use-options-snapshot";
 import { getUserFacingErrorMessage } from "@/lib/http/errors";
 
@@ -38,9 +40,7 @@ export function OptionsPage() {
             </Button>
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">
-            {data.length.toLocaleString("fa-IR")} نماد بارگذاری شد
-          </p>
+          <DataTable columns={optionsColumns} data={data ?? []} />
         )}
       </div>
     </section>
