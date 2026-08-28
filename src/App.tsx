@@ -1,11 +1,13 @@
+import { AppLayout } from "@/components/layouts/app-layout";
 import { ThemeProvider } from "@/components/theme-provider";
-import { ModeToggle } from "@/components/mode-toggle";
+import { DirectionProvider } from "@/components/ui/direction";
 
 function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-      <div>Real-Time Options</div>
-      <ModeToggle />
+      <DirectionProvider direction="rtl">
+        <AppLayout />
+      </DirectionProvider>
     </ThemeProvider>
   );
 }

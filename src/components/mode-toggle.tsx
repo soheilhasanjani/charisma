@@ -1,4 +1,4 @@
-import { Moon, Sun } from "lucide-react";
+import { Monitor, Moon, Sun } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -8,18 +8,35 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "@/components/theme-provider";
+import { cn } from "@/lib/utils";
 
 export function ModeToggle() {
-  const { setTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon">
-          <Sun className="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
-          <Moon className="absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
-          <span className="sr-only">Toggle theme</span>
-        </Button>
+      <DropdownMenuTrigger
+        render={<Button variant="outline" size="icon" className="relative" />}
+      >
+        <Sun
+          className={cn(
+            "absolute size-[1.2rem] transition-all",
+            theme === "light" ? "scale-100 rotate-0" : "scale-0 -rotate-90",
+          )}
+        />
+        <Moon
+          className={cn(
+            "absolute size-[1.2rem] transition-all",
+            theme === "dark" ? "scale-100 rotate-0" : "scale-0 rotate-90",
+          )}
+        />
+        <Monitor
+          className={cn(
+            "absolute size-[1.2rem] transition-all",
+            theme === "system" ? "scale-100 rotate-0" : "scale-0",
+          )}
+        />
+        <span className="sr-only">Toggle theme</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => setTheme("light")}>
