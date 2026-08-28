@@ -1,17 +1,21 @@
 import type { ReactNode } from 'react'
 
-import { ModeToggle } from '@/components/mode-toggle'
-
-const BRAND_NAME = 'بازار آپشن'
-
 type AppLayoutProps = {
   children?: ReactNode
+  brand?: ReactNode
   /** Pinned to the physical left edge, even in RTL. */
   statusStart?: ReactNode
+  headerEnd?: ReactNode
   banner?: ReactNode
 }
 
-export function AppLayout({ children, statusStart, banner }: AppLayoutProps) {
+export function AppLayout({
+  children,
+  brand,
+  statusStart,
+  headerEnd,
+  banner,
+}: AppLayoutProps) {
   return (
     <>
       <header className="bg-background/95 supports-backdrop-filter:bg-background/80 sticky top-0 z-50 border-b pt-[env(safe-area-inset-top)] backdrop-blur-sm">
@@ -22,11 +26,11 @@ export function AppLayout({ children, statusStart, banner }: AppLayoutProps) {
             </div>
           ) : null}
 
-          <p className="font-heading text-foreground mx-auto text-base font-semibold tracking-tight sm:text-lg">
-            {BRAND_NAME}
-          </p>
+          <div className="font-heading text-foreground mx-auto text-base font-semibold tracking-tight sm:text-lg">
+            {brand}
+          </div>
 
-          <ModeToggle />
+          <div className="flex items-center gap-2">{headerEnd}</div>
         </div>
 
         {banner ? (

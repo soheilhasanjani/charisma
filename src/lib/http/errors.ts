@@ -1,3 +1,5 @@
+import { i18n } from '@/i18n/i18n'
+
 type ApiErrorInit = {
   message: string
   status?: number
@@ -116,18 +118,18 @@ export function toApiError(error: unknown): ApiError {
 export function getUserFacingErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
     if (error.isTimeout) {
-      return 'زمان پاسخ سرور به پایان رسید. دوباره تلاش کنید.'
+      return i18n.t('errors.timeout')
     }
     if (error.isNetworkError) {
-      return 'ارتباط با سرور برقرار نشد. اتصال اینترنت را بررسی کنید.'
+      return i18n.t('errors.network')
     }
     if (error.status === 429) {
-      return 'تعداد درخواست‌ها زیاد است. کمی بعد دوباره تلاش کنید.'
+      return i18n.t('errors.rateLimit')
     }
     if (error.status !== undefined && error.status >= 500) {
-      return 'خطای سرور رخ داد. دوباره تلاش کنید.'
+      return i18n.t('errors.server')
     }
   }
 
-  return 'بارگذاری اطلاعات ناموفق بود. دوباره تلاش کنید.'
+  return i18n.t('errors.generic')
 }

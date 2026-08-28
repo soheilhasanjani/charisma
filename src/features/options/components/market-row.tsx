@@ -1,4 +1,5 @@
 import { type CSSProperties, memo } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import {
   type ColumnId,
@@ -15,6 +16,7 @@ import {
 import { EMPTY_DISPLAY } from '@/features/options/lib/parse-option-symbol'
 import type { SymbolRecord } from '@/features/options/model/types'
 import type { RiskScoreState } from '@/features/options/risk/types'
+import { getActiveFormatLocale } from '@/i18n/format-locale'
 import { formatPrice } from '@/lib/format-price'
 import { cn } from '@/lib/utils'
 
@@ -218,6 +220,8 @@ function SpreadCell({ record }: { record: SymbolRecord | undefined }) {
 }
 
 function LastTradeSideCell({ side }: { side: 'buy' | 'sell' | undefined }) {
+  const { t } = useTranslation()
+
   if (!side) {
     return <span>{EMPTY_DISPLAY}</span>
   }
@@ -232,7 +236,7 @@ function LastTradeSideCell({ side }: { side: 'buy' | 'sell' | undefined }) {
           : 'text-red-600 dark:text-red-400',
       )}
     >
-      {side === 'buy' ? 'Buy' : 'Sell'}
+      {side === 'buy' ? t('trade.sideBuyLabel') : t('trade.sideSellLabel')}
     </span>
   )
 }
@@ -248,7 +252,7 @@ function RiskScoreCell({
 
   return (
     <span dir="ltr" className="tabular-nums">
-      {riskScore.value.toLocaleString('fa-IR', {
+      {riskScore.value.toLocaleString(getActiveFormatLocale(), {
         maximumFractionDigits: 2,
       })}
     </span>

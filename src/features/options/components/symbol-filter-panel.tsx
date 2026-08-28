@@ -1,6 +1,7 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { CheckIcon } from 'lucide-react'
 import { useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/primitives/button'
 import {
@@ -32,6 +33,7 @@ export function SymbolFilterPanel({
   onToggleSymbol,
   onToggleGroup,
 }: SymbolFilterPanelProps) {
+  const { t } = useTranslation()
   const scrollRef = useRef<HTMLDivElement>(null)
   const filteredSymbols = useMemo(
     () => filterSymbolsByQuery(symbols, query),
@@ -68,7 +70,7 @@ export function SymbolFilterPanel({
   if (rows.length === 0) {
     return (
       <div className="text-muted-foreground px-3 py-6 text-center text-sm">
-        نمادی یافت نشد.
+        {t('filter.noResults')}
       </div>
     )
   }
@@ -124,6 +126,7 @@ function GroupHeader({
   selectedSet: ReadonlySet<string>
   onToggleGroup: (symbols: readonly string[]) => void
 }) {
+  const { t } = useTranslation()
   const allSelected = group.symbols.every((symbol) => selectedSet.has(symbol))
 
   return (
@@ -140,7 +143,7 @@ function GroupHeader({
           onToggleGroup(group.symbols)
         }}
       >
-        {allSelected ? 'حذف گروه' : 'انتخاب گروه'}
+        {allSelected ? t('filter.deselectGroup') : t('filter.selectGroup')}
       </Button>
     </div>
   )

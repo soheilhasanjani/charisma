@@ -1,5 +1,6 @@
 import { CircleHelp } from 'lucide-react'
 import type { CSSProperties } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import {
   Tooltip,
@@ -8,6 +9,7 @@ import {
   TooltipTrigger,
 } from '@/components/primitives/tooltip'
 import {
+  columnTranslationKey,
   MARKET_COLUMNS,
   MARKET_GRID_TEMPLATE,
   type MarketColumnDef,
@@ -64,7 +66,10 @@ function MarketGridHeaderCell({
   columnIndex,
   sort,
 }: MarketGridHeaderCellProps) {
+  const { t } = useTranslation()
   const runtime = useMarketRuntime()
+  const header = t(columnTranslationKey(column.id, 'header'))
+  const description = t(columnTranslationKey(column.id, 'description'))
   const isSorted =
     column.sortColumn != null && sort.column === column.sortColumn
   const ariaSort = isSorted
@@ -95,10 +100,10 @@ function MarketGridHeaderCell({
             runtime.setSort(toggleSort(sort, column.sortColumn!))
           }}
         >
-          {column.header}
+          {header}
         </button>
       ) : (
-        <span className="min-w-0 truncate font-medium">{column.header}</span>
+        <span className="min-w-0 truncate font-medium">{header}</span>
       )}
 
       <TooltipProvider delay={200}>
@@ -106,7 +111,7 @@ function MarketGridHeaderCell({
           <TooltipTrigger
             type="button"
             tabIndex={-1}
-            aria-label={`راهنمای ستون ${column.header}`}
+            aria-label={t('columns.help', { column: header })}
             aria-describedby={descriptionId}
             className="text-muted-foreground hover:text-foreground inline-flex size-6 shrink-0 items-center justify-center rounded-sm"
             onKeyDown={(event) => {
@@ -116,7 +121,7 @@ function MarketGridHeaderCell({
             <CircleHelp className="size-3.5" aria-hidden="true" />
           </TooltipTrigger>
           <TooltipContent id={descriptionId} side="bottom" className="max-w-xs">
-            {column.description}
+            {description}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

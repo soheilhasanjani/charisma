@@ -43,6 +43,16 @@ export type SymbolHistory = {
 
 export type FeedAuthority = 'transport' | 'server' | 'staleness'
 
+export type FeedStatusLabelKey =
+  | 'feed.offline'
+  | 'feed.watchdog'
+  | 'feed.manualRetry'
+  | 'feed.connecting'
+  | 'feed.slow'
+  | 'feed.serverDisconnected'
+  | 'feed.connected'
+  | 'feed.disconnected'
+
 export type FeedStatusRecord = {
   transport: 'idle' | 'connecting' | 'open' | 'closed'
   staleLevel: 'fresh' | 'slow' | 'dead'
@@ -51,7 +61,7 @@ export type FeedStatusRecord = {
   awaitingManualRetry: boolean
   lastCloseReason: string | null
   authority: FeedAuthority
-  label: string
+  labelKey: FeedStatusLabelKey
 }
 
 export type ViewportRecord = {

@@ -1,5 +1,6 @@
 import { PauseIcon, PlayIcon } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/primitives/button'
 import { useLastTrade } from '@/features/options/hooks/use-last-trade'
@@ -8,6 +9,7 @@ import { formatPrice } from '@/lib/format-price'
 import { cn } from '@/lib/utils'
 
 export function LastTradeBanner() {
+  const { t } = useTranslation()
   const trade = useLastTrade()
   const [paused, setPaused] = useState(false)
   const [pausedSnapshot, setPausedSnapshot] = useState(trade)
@@ -16,7 +18,9 @@ export function LastTradeBanner() {
   return (
     <div className="bg-muted/40 flex min-h-10 flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm">
       <div className="flex min-w-0 flex-1 items-center gap-2">
-        <span className="text-muted-foreground shrink-0">آخرین معامله:</span>
+        <span className="text-muted-foreground shrink-0">
+          {t('trade.latest')}
+        </span>
         {visibleTrade ? (
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <OptionTickerCell symbol={visibleTrade.symbol} />
@@ -29,7 +33,9 @@ export function LastTradeBanner() {
                   : 'text-red-600 dark:text-red-400',
               )}
             >
-              {visibleTrade.side === 'buy' ? 'Buy' : 'Sell'}{' '}
+              {visibleTrade.side === 'buy'
+                ? t('trade.sideBuyLabel')
+                : t('trade.sideSellLabel')}{' '}
               {formatPrice(visibleTrade.price)} × {visibleTrade.size}
             </span>
             <span className="text-muted-foreground truncate" dir="ltr">
@@ -37,7 +43,7 @@ export function LastTradeBanner() {
             </span>
           </div>
         ) : (
-          <span className="text-muted-foreground">هنوز معامله‌ای ثبت نشده</span>
+          <span className="text-muted-foreground">{t('trade.none')}</span>
         )}
       </div>
 
@@ -46,7 +52,7 @@ export function LastTradeBanner() {
         variant="ghost"
         size="icon-sm"
         aria-pressed={paused}
-        aria-label={paused ? 'ادامه نمایش معاملات' : 'توقف نمایش معاملات'}
+        aria-label={paused ? t('trade.resume') : t('trade.pause')}
         onClick={() => {
           setPaused((current) => {
             if (!current && trade) {
@@ -66,7 +72,12 @@ export function LastTradeBanner() {
           aria-live="polite"
           aria-atomic="true"
         >
-          {`معامله ${trade.side === 'buy' ? 'خرید' : 'فروش'} ${trade.symbol} به قیمت ${trade.price}`}
+          {t('trade.liveAnnouncement', {
+            side:
+              trade.side === 'buy' ? t('trade.sideBuy') : t('trade.sideSell'),
+            symbol: trade.symbol,
+            price: trade.price,
+          })}
         </div>
       ) : null}
     </div>

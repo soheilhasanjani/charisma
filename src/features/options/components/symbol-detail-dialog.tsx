@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next'
+
 import {
   Dialog,
   DialogContent,
@@ -25,6 +27,8 @@ export function SymbolDetailDialog({
   symbol,
   onOpenChange,
 }: SymbolDetailDialogProps) {
+  const { t } = useTranslation()
+
   return (
     <Dialog open={symbol != null} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg sm:max-w-xl">
@@ -35,7 +39,7 @@ export function SymbolDetailDialog({
               {symbol}
             </span>
           </DialogTitle>
-          <DialogDescription>جزئیات زنده نماد انتخاب‌شده</DialogDescription>
+          <DialogDescription>{t('detail.description')}</DialogDescription>
         </DialogHeader>
 
         {symbol ? <SymbolDetailBody symbol={symbol} /> : null}
@@ -45,6 +49,7 @@ export function SymbolDetailDialog({
 }
 
 function SymbolDetailBody({ symbol }: { symbol: string }) {
+  const { t } = useTranslation()
   const record = useSymbolRecord(symbol)
   const history = useSymbolHistory(symbol)
 
@@ -53,42 +58,48 @@ function SymbolDetailBody({ symbol }: { symbol: string }) {
   return (
     <div className="grid gap-4">
       <section>
-        <h3 className="mb-2 text-sm font-semibold">Greeks</h3>
+        <h3 className="mb-2 text-sm font-semibold">{t('detail.greeks')}</h3>
         <dl className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
-          <Metric label="Delta" value={record?.delta?.value} />
-          <Metric label="Gamma" value={record?.gamma?.value} />
-          <Metric label="Theta" value={record?.theta?.value} />
-          <Metric label="Vega" value={record?.vega?.value} />
+          <Metric label={t('detail.delta')} value={record?.delta?.value} />
+          <Metric label={t('detail.gamma')} value={record?.gamma?.value} />
+          <Metric label={t('detail.theta')} value={record?.theta?.value} />
+          <Metric label={t('detail.vega')} value={record?.vega?.value} />
         </dl>
       </section>
 
       <section>
-        <h3 className="mb-2 text-sm font-semibold">امتیاز ریسک</h3>
+        <h3 className="mb-2 text-sm font-semibold">{t('detail.riskScore')}</h3>
         {breakdown ? (
           <dl className="grid gap-2 text-sm">
             <Metric
-              label="Greeks component"
+              label={t('detail.greeksComponent')}
               value={breakdown.greeksComponent}
             />
             <Metric
-              label="Spread component"
+              label={t('detail.spreadComponent')}
               value={breakdown.spreadComponent}
             />
-            <Metric label="Omega AI" value={breakdown.omegaAI} />
-            <Metric label="Total" value={breakdown.total} emphasized />
+            <Metric label={t('detail.omegaAI')} value={breakdown.omegaAI} />
+            <Metric
+              label={t('detail.total')}
+              value={breakdown.total}
+              emphasized
+            />
           </dl>
         ) : (
-          <p className="text-muted-foreground text-sm">—</p>
+          <p className="text-muted-foreground text-sm">{t('common.empty')}</p>
         )}
       </section>
 
       <section>
-        <h3 className="mb-2 text-sm font-semibold">نمودار قیمت</h3>
+        <h3 className="mb-2 text-sm font-semibold">{t('detail.priceChart')}</h3>
         <PriceSparkline prices={history.prices} />
       </section>
 
       <section>
-        <h3 className="mb-2 text-sm font-semibold">معاملات اخیر</h3>
+        <h3 className="mb-2 text-sm font-semibold">
+          {t('detail.recentTrades')}
+        </h3>
         <RecentTrades history={history} />
       </section>
     </div>
@@ -120,11 +131,11 @@ function buildRiskBreakdown(record: SymbolRecord | undefined) {
 }
 
 function RecentTrades({ history }: { history: SymbolHistory }) {
+  const { t } = useTranslation()
+
   if (history.trades.length === 0) {
     return (
-      <p className="text-muted-foreground text-sm">
-        هنوز معامله‌ای برای این نماد ثبت نشده.
-      </p>
+      <p className="text-muted-foreground text-sm">{t('detail.noTrades')}</p>
     )
   }
 
@@ -144,8 +155,10 @@ function RecentTrades({ history }: { history: SymbolHistory }) {
                 : 'text-red-600 dark:text-red-400',
             )}
           >
-            {trade.side === 'buy' ? 'Buy' : 'Sell'} {formatPrice(trade.price)} ×{' '}
-            {trade.size}
+            {trade.side === 'buy'
+              ? t('trade.sideBuyLabel')
+              : t('trade.sideSellLabel')}{' '}
+            {formatPrice(trade.price)} × {trade.size}
           </span>
           <span className="text-muted-foreground" dir="ltr">
             {trade.time}
@@ -165,6 +178,8 @@ function Metric({
   value: number | undefined
   emphasized?: boolean
 }) {
+  const { t } = useTranslation()
+
   return (
     <div className="bg-muted/40 rounded-md border px-2 py-1.5">
       <dt className="text-muted-foreground text-xs">{label}</dt>
@@ -172,15 +187,23 @@ function Metric({
         dir="ltr"
         className={cn('tabular-nums', emphasized && 'text-base font-semibold')}
       >
-        {value == null || !Number.isFinite(value) ? '—' : formatPrice(value)}
+        {value == null || !Number.isFinite(value)
+          ? t('common.empty')
+          : formatPrice(value)}
       </dd>
     </div>
   )
 }
 
 function PriceSparkline({ prices }: { prices: readonly number[] }) {
+  const { t } = useTranslation()
+
   if (prices.length < 2) {
-    return <p className="text-muted-foreground text-sm">داده کافی نیست.</p>
+    return (
+      <p className="text-muted-foreground text-sm">
+        {t('detail.insufficientData')}
+      </p>
+    )
   }
 
   const width = 320
@@ -202,7 +225,7 @@ function PriceSparkline({ prices }: { prices: readonly number[] }) {
       viewBox={`0 0 ${width} ${height}`}
       className="bg-muted/20 h-20 w-full rounded-md border"
       role="img"
-      aria-label="نمودار قیمت اخیر"
+      aria-label={t('detail.chartLabel')}
     >
       <polyline
         fill="none"

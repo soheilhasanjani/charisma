@@ -1,3 +1,5 @@
+import { getActiveFormatLocale } from '@/i18n/format-locale'
+
 const EMPTY_DATE_DISPLAY = '-'
 
 const dateFormatters = new Map<string, Intl.DateTimeFormat>()
@@ -52,17 +54,12 @@ function parseDateValue(value: string) {
 }
 
 /**
- * Formats a date string for display (e.g. `"۲۸ دی ۱۴۰۳"` with `"fa-IR"`).
- *
+ * Formats a date string for display.
  * Accepts compact (`YYYYMMDD`), ISO date (`YYYY-MM-DD`), or any
- * `Date.parse`-able value. `null`, `undefined`, empty, and invalid
- * inputs render as `"-"`.
- *
- * @param value - Date string to format
- * @param locale - BCP 47 locale, defaults to `"en-US"`
+ * `Date.parse`-able value. Empty and invalid inputs render as `"-"`.
  */
-export function formatDate(value: string | null | undefined, locale = 'en-US') {
-  if (value == null || value === undefined || value.trim() === '') {
+export function formatDate(value: string | null | undefined, locale?: string) {
+  if (value == null || value.trim() === '') {
     return EMPTY_DATE_DISPLAY
   }
 
@@ -73,7 +70,8 @@ export function formatDate(value: string | null | undefined, locale = 'en-US') {
       return EMPTY_DATE_DISPLAY
     }
 
-    return getDateFormatter(locale).format(date)
+    const resolvedLocale = locale ?? getActiveFormatLocale()
+    return getDateFormatter(resolvedLocale).format(date)
   } catch {
     return EMPTY_DATE_DISPLAY
   }

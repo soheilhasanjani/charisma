@@ -1,6 +1,7 @@
 import { Combobox } from '@base-ui/react/combobox'
 import { ChevronDownIcon, XIcon } from 'lucide-react'
 import { lazy, Suspense, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Badge } from '@/components/primitives/badge'
 import { Button } from '@/components/primitives/button'
@@ -35,6 +36,7 @@ export function SymbolFilter({
   onClearAll,
   className,
 }: SymbolFilterProps) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
 
@@ -43,11 +45,11 @@ export function SymbolFilter({
 
   const anchorSummary = useMemo(() => {
     if (selected.length === 0) {
-      return 'فیلتر نماد'
+      return t('filter.placeholder')
     }
 
-    return `${selected.length} نماد انتخاب شده`
-  }, [selected.length])
+    return t('filter.selectedCount', { count: selected.length })
+  }, [selected.length, t])
 
   return (
     <div className={cn('flex min-w-0 flex-col gap-2', className)}>
@@ -68,7 +70,7 @@ export function SymbolFilter({
               size="sm"
               onClick={onClearAll}
             >
-              پاک کردن
+              {t('common.clear')}
             </Button>
           ) : null}
         </div>
@@ -81,7 +83,7 @@ export function SymbolFilter({
                 <button
                   type="button"
                   className="hover:bg-background/40 rounded-full p-0.5"
-                  aria-label={`حذف ${symbol}`}
+                  aria-label={t('filter.removeSymbol', { symbol })}
                   onClick={() => {
                     onToggleSymbol(symbol)
                   }}
@@ -101,7 +103,7 @@ export function SymbolFilter({
           <Combobox.Positioner className="z-50" sideOffset={8}>
             <Combobox.Popup className="bg-popover text-popover-foreground ring-foreground/10 w-[min(100vw-2rem,28rem)] rounded-xl border p-2 shadow-lg ring-1">
               <Combobox.Input
-                placeholder="جستجوی نماد یا تیکر…"
+                placeholder={t('filter.searchPlaceholder')}
                 className="border-input bg-background mb-2 w-full rounded-md border px-3 py-2 text-sm outline-none"
                 value={query}
                 onChange={(event) => {

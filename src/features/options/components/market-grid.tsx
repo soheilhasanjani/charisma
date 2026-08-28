@@ -1,5 +1,6 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { MarketGridHeader } from '@/features/options/components/market-grid-header'
 import {
@@ -29,6 +30,7 @@ export function MarketGrid({
   className,
   onRowActivate,
 }: MarketGridProps) {
+  const { t } = useTranslation()
   const runtime = useMarketRuntime()
   const scrollRef = useRef<HTMLDivElement>(null)
   const [isScrolling, setIsScrolling] = useState(false)
@@ -98,15 +100,13 @@ export function MarketGrid({
         <div className="text-muted-foreground flex min-h-48 flex-1 flex-col items-center justify-center gap-2 p-6 text-sm">
           {emptyKind === 'snapshot' ? (
             <>
-              <p>داده‌ای از سرور دریافت نشد.</p>
-              <p className="text-xs">اتصال شبکه یا پاسخ API را بررسی کنید.</p>
+              <p>{t('grid.emptySnapshot')}</p>
+              <p className="text-xs">{t('grid.emptySnapshotHint')}</p>
             </>
           ) : (
             <>
-              <p>هیچ نمادی با فیلتر فعلی مطابقت ندارد.</p>
-              <p className="text-xs">
-                فیلتر را پاک کنید یا معیار دیگری انتخاب کنید.
-              </p>
+              <p>{t('grid.emptyFilter')}</p>
+              <p className="text-xs">{t('grid.emptyFilterHint')}</p>
             </>
           )}
         </div>

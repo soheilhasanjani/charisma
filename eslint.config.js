@@ -46,6 +46,7 @@ export default defineConfig([
             'badgeVariants',
             'buttonVariants',
             'useDirection',
+            'useLocale',
             'useTheme',
           ],
         },

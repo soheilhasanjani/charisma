@@ -93,7 +93,7 @@ const INITIAL_FEED_STATUS: FeedStatusRecord = {
   awaitingManualRetry: false,
   lastCloseReason: null,
   authority: 'transport',
-  label: 'در حال اتصال…',
+  labelKey: 'feed.connecting',
 }
 
 export function createFeedStatusStore() {

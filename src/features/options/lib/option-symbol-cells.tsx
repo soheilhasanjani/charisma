@@ -1,8 +1,12 @@
+import { useTranslation } from 'react-i18next'
+
 import {
   EMPTY_DISPLAY,
   type OptionType,
   parseOptionSymbol,
 } from '@/features/options/lib/parse-option-symbol'
+import { getActiveDateLocale } from '@/i18n/format-locale'
+import { useLocale } from '@/i18n/locale-provider'
 import { formatDate } from '@/lib/format-date'
 
 const strikeFormatter = new Intl.NumberFormat('en-US', {
@@ -11,11 +15,6 @@ const strikeFormatter = new Intl.NumberFormat('en-US', {
   minimumFractionDigits: 0,
   maximumFractionDigits: 2,
 })
-
-const optionTypeLabel: Record<OptionType, string> = {
-  call: 'Call',
-  put: 'Put',
-}
 
 const optionTypeClassName: Record<OptionType, string> = {
   call: 'text-green-600 dark:text-green-400',
@@ -47,6 +46,7 @@ export function OptionStrikeCell({ symbol }: { symbol: string }) {
 }
 
 export function OptionTypeCell({ symbol }: { symbol: string }) {
+  const { t } = useTranslation()
   const parsed = parseOptionSymbol(symbol)
 
   if (!parsed) {
@@ -55,17 +55,22 @@ export function OptionTypeCell({ symbol }: { symbol: string }) {
 
   return (
     <span dir="ltr" lang="en" className={optionTypeClassName[parsed.type]}>
-      {optionTypeLabel[parsed.type]}
+      {t(`optionType.${parsed.type}`)}
     </span>
   )
 }
 
 export function OptionExpiryCell({ symbol }: { symbol: string }) {
+  const { locale } = useLocale()
   const parsed = parseOptionSymbol(symbol)
 
   if (!parsed) {
     return <span>{EMPTY_DISPLAY}</span>
   }
 
-  return <span dir="ltr">{formatDate(parsed.expiry, 'fa-IR')}</span>
+  return (
+    <span dir="ltr">
+      {formatDate(parsed.expiry, getActiveDateLocale(locale))}
+    </span>
+  )
 }

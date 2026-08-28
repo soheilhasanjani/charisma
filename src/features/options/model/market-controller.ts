@@ -9,6 +9,7 @@ import type {
   SelectionStore,
 } from '@/features/options/model/stores/live-stores'
 import type { SymbolStore } from '@/features/options/model/stores/symbol-store'
+import type { FeedStatusLabelKey } from '@/features/options/model/types'
 import type { OptionSnapshot } from '@/features/options/types'
 
 const LAST_TRADE_THROTTLE_MS = 750
@@ -32,32 +33,32 @@ export function createMarketController(deps: MarketControllerDeps) {
     deps.symbolStore.markDirty(symbol)
   }
 
-  function deriveFeedLabel(
+  function deriveFeedLabelKey(
     transport: FeedTransportStatus,
     serverStatus: 'connected' | 'slow' | 'disconnected' | null,
-  ) {
+  ): FeedStatusLabelKey {
     if (transport.lastCloseReason === 'offline') {
-      return 'آفلاین'
+      return 'feed.offline'
     }
     if (transport.lastCloseReason === 'watchdog') {
-      return 'اتصال بی‌صدا — در حال اتصال مجدد'
+      return 'feed.watchdog'
     }
     if (transport.awaitingManualRetry) {
-      return 'اتصال ناموفق — تلاش مجدد'
+      return 'feed.manualRetry'
     }
     if (transport.transport === 'connecting') {
-      return 'در حال اتصال…'
+      return 'feed.connecting'
     }
     if (transport.staleLevel === 'slow') {
-      return 'اتصال کند'
+      return 'feed.slow'
     }
     if (serverStatus === 'disconnected' && transport.transport === 'open') {
-      return 'سرور disconnected گزارش کرد'
+      return 'feed.serverDisconnected'
     }
     if (transport.transport === 'open') {
-      return 'متصل'
+      return 'feed.connected'
     }
-    return 'قطع'
+    return 'feed.disconnected'
   }
 
   function deriveAuthority(
@@ -135,7 +136,7 @@ export function createMarketController(deps: MarketControllerDeps) {
         case 'status':
           deps.feedStatusStore.update({
             serverStatus: message.status,
-            label: deriveFeedLabel(
+            labelKey: deriveFeedLabelKey(
               {
                 transport: 'open',
                 staleLevel: 'fresh',
@@ -184,7 +185,7 @@ export function createMarketController(deps: MarketControllerDeps) {
         awaitingManualRetry: transport.awaitingManualRetry,
         lastCloseReason: transport.lastCloseReason,
         authority: deriveAuthority(transport, serverStatus),
-        label: deriveFeedLabel(transport, serverStatus),
+        labelKey: deriveFeedLabelKey(transport, serverStatus),
       })
       deps.feedStatusStore.flush()
     },

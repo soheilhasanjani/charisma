@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/primitives/button'
 import { Skeleton } from '@/components/primitives/skeleton'
@@ -20,6 +21,7 @@ const SymbolDetailDialog = lazy(async () => {
 })
 
 export function OptionsPage() {
+  const { t } = useTranslation()
   const { data, error, isError, isFetching, isPending, refetch } =
     useOptionsSnapshot()
   const rankedSymbols = useRankedSymbols()
@@ -67,7 +69,7 @@ export function OptionsPage() {
     <>
       <section className="p-4 sm:p-6">
         <div className="flex flex-col gap-4">
-          <h1 className="text-2xl font-bold">بازار آپشن</h1>
+          <h1 className="text-2xl font-bold">{t('app.title')}</h1>
 
           {!isPending && !isError ? (
             <SymbolFilter
@@ -106,7 +108,7 @@ export function OptionsPage() {
                 }}
                 disabled={isFetching}
               >
-                تلاش مجدد
+                {t('common.retry')}
               </Button>
             </div>
           ) : (

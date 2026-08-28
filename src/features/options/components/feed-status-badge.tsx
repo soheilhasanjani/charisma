@@ -1,9 +1,11 @@
+import { useTranslation } from 'react-i18next'
+
 import { Badge } from '@/components/primitives/badge'
 import { useFeedStatus } from '@/features/options/hooks/use-market-data'
-import type { FeedStatusRecord } from '@/features/options/model/types'
 import { cn } from '@/lib/utils'
 
 export function FeedStatusBadge() {
+  const { t } = useTranslation()
   const status = useFeedStatus()
 
   return (
@@ -15,12 +17,12 @@ export function FeedStatusBadge() {
       )}
       title={statusDetail(status)}
     >
-      {status.label}
+      {t(status.labelKey)}
     </Badge>
   )
 }
 
-function statusVariantClass(status: FeedStatusRecord) {
+function statusVariantClass(status: ReturnType<typeof useFeedStatus>) {
   if (status.staleLevel === 'dead') {
     return 'border-destructive/40 text-destructive'
   }
@@ -36,6 +38,6 @@ function statusVariantClass(status: FeedStatusRecord) {
   return 'border-emerald-500/40 text-emerald-700 dark:text-emerald-300'
 }
 
-function statusDetail(status: FeedStatusRecord) {
+function statusDetail(status: ReturnType<typeof useFeedStatus>) {
   return `authority=${status.authority}; transport=${status.transport}; server=${status.serverStatus ?? 'none'}`
 }
