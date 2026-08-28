@@ -1,5 +1,5 @@
 import { setupWorker } from 'msw/browser'
-import { httpHandlers } from './httpHandlers'
-import { wsHandlers } from './wsHandlers'
+import { httpHandlers } from './http-handlers'
+import { wsHandlers } from './ws-handlers'
 
 export const worker = setupWorker(...httpHandlers, ...wsHandlers)

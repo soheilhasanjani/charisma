@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw'
-import { symbols } from './wsHandlers'
+import { symbols } from './ws-handlers'
 
 function rand(min: number, max: number) {
   return Math.random() * (max - min) + min
