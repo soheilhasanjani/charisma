@@ -59,7 +59,7 @@ export function DataTableVirtualized<TData extends RowData>({
     <div className="flex h-[min(50rem,70dvh)] flex-col overflow-hidden rounded-lg border">
       <div className="h-10 shrink-0 border-b bg-background">
         <table className="grid h-full w-full caption-bottom text-sm">
-          <TableHeader className="grid h-full [&_tr]:border-b-0">
+          <TableHeader className="grid h-full border-b-0">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
                 key={headerGroup.id}
