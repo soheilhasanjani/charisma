@@ -1,4 +1,5 @@
 import type { Stamped } from '@/features/options/model/revisions'
+import type { RiskScoreState } from '@/features/options/risk/types'
 
 export type FlashDirection = 'up' | 'down' | null
 
@@ -14,6 +15,7 @@ export type SymbolRecord = {
   stale: boolean
   flashDirection: FlashDirection
   lastTradeSide?: 'buy' | 'sell'
+  riskScore?: RiskScoreState
 }
 
 export type LastTradeRecord = {
@@ -58,7 +60,7 @@ export type ViewportRecord = {
 
 export type SortDirection = 'asc' | 'desc'
 
-export type SortColumn = 'symbol' | 'last' | 'bid' | 'ask'
+export type SortColumn = 'symbol' | 'last' | 'bid' | 'ask' | 'riskScore'
 
 export type SortState = {
   column: SortColumn

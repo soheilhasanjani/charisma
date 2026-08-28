@@ -10,12 +10,21 @@ import {
   createViewportStore,
 } from '@/features/options/model/stores/live-stores'
 import { createSymbolStore } from '@/features/options/model/stores/symbol-store'
+import { createTableRowsCache } from '@/features/options/model/table-rows-cache'
 import type { SortState } from '@/features/options/model/types'
+import { createRiskEngine } from '@/features/options/risk/risk-engine'
+import type { RiskComputeMode } from '@/features/options/risk/types'
 import type { OptionSnapshot } from '@/features/options/types'
+
+function readInitialComputeMode(): RiskComputeMode {
+  if (typeof window === 'undefined') return 'viewport'
+  return window.location.search.includes('risk=all') ? 'all' : 'viewport'
+}
 
 export type MarketRuntimeOptions = {
   fetchSnapshot?: () => Promise<OptionSnapshot[]>
   log?: (message: string, detail?: unknown) => void
+  riskComputeMode?: RiskComputeMode
 }
 
 export function createMarketRuntime(options: MarketRuntimeOptions = {}) {
@@ -31,10 +40,26 @@ export function createMarketRuntime(options: MarketRuntimeOptions = {}) {
   let sortState: SortState = DEFAULT_SORT
   let orderLocked = false
   let started = false
+  let computeMode = options.riskComputeMode ?? readInitialComputeMode()
+
+  const rankingHolder: {
+    ranking?: ReturnType<typeof createRanking>
+  } = {}
+
+  const riskEngine = createRiskEngine({
+    getRecord: (symbol) => symbolStore.get(symbol),
+    getComputeMode: () => computeMode,
+    onScore(symbol, score) {
+      symbolStore.applyRiskScore(symbol, score)
+      symbolStore.flushKey(symbol)
+      rankingHolder.ranking?.invalidate()
+    },
+  })
 
   const scheduler = createFrameScheduler({
     getVisibleKeys: () => viewportStore.getVisibleSymbols(),
     onFlush(keys) {
+      riskEngine.computeForKeys(keys, viewportStore.getVisibleSymbols())
       for (const key of keys) {
         symbolStore.flushKey(key)
       }
@@ -58,6 +83,14 @@ export function createMarketRuntime(options: MarketRuntimeOptions = {}) {
     getSort: () => sortState,
     isOrderLocked: () => orderLocked,
   })
+  rankingHolder.ranking = ranking
+
+  const tableRows = createTableRowsCache({
+    getSymbols: () => ranking.getSnapshot(),
+    getRow: (symbol) => symbolStore.toOptionSnapshot(symbol),
+    subscribeSymbols: (listener) => symbolStore.subscribeAll(listener),
+    subscribeOrder: (listener) => ranking.subscribe(listener),
+  })
 
   const socket = createReconnectingSocket({
     onMessage: (message) => controller.handleMessage(message),
@@ -73,8 +106,10 @@ export function createMarketRuntime(options: MarketRuntimeOptions = {}) {
     log('snapshot resync started')
     const snapshots = await options.fetchSnapshot()
     controller.applySnapshot(snapshots)
+    riskEngine.computeAllKnown(snapshots.map((row) => row.symbol))
     scheduler.flushNow()
     ranking.invalidate(true)
+    tableRows.invalidate()
     log('snapshot resync applied', { rows: snapshots.length })
   }
 
@@ -88,9 +123,11 @@ export function createMarketRuntime(options: MarketRuntimeOptions = {}) {
       viewport: viewportStore,
     },
     ranking,
+    tableRows,
     scheduler,
     controller,
     socket,
+    riskEngine,
 
     start() {
       if (started) return
@@ -108,8 +145,10 @@ export function createMarketRuntime(options: MarketRuntimeOptions = {}) {
 
     applySnapshot(snapshots: OptionSnapshot[]) {
       controller.applySnapshot(snapshots)
+      riskEngine.computeAllKnown(snapshots.map((row) => row.symbol))
       scheduler.flushNow()
       ranking.invalidate(true)
+      tableRows.invalidate()
     },
 
     resyncSnapshot,
@@ -134,6 +173,10 @@ export function createMarketRuntime(options: MarketRuntimeOptions = {}) {
     setViewportSymbols(symbols: string[]) {
       viewportStore.setSymbols(symbols)
       viewportStore.flush()
+    },
+
+    setRiskComputeMode(mode: RiskComputeMode) {
+      computeMode = mode
     },
   }
 }

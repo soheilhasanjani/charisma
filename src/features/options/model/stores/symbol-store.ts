@@ -5,6 +5,7 @@ import {
   symbolRecordToSnapshot,
 } from '@/features/options/model/snapshot-reconcile'
 import type { SymbolRecord } from '@/features/options/model/types'
+import type { RiskScoreState } from '@/features/options/risk/types'
 
 export function createSymbolStore() {
   const store = createEntityStore<string, SymbolRecord>()
@@ -89,6 +90,13 @@ export function createSymbolStore() {
         theta: stampLive(greeks.theta),
         vega: stampLive(greeks.vega),
         stale: false,
+      }))
+    },
+
+    applyRiskScore(symbol: string, riskScore: RiskScoreState) {
+      this.upsert(symbol, (record) => ({
+        ...record,
+        riskScore,
       }))
     },
 

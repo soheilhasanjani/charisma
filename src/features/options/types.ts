@@ -7,4 +7,5 @@ export type OptionSnapshot = {
   gamma: number
   theta: number
   vega: number
+  riskScore: number | null
 }

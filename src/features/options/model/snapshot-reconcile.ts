@@ -40,5 +40,7 @@ export function symbolRecordToSnapshot(record: SymbolRecord) {
     gamma: record.gamma?.value ?? 0,
     theta: record.theta?.value ?? 0,
     vega: record.vega?.value ?? 0,
+    riskScore:
+      record.riskScore?.status === 'ready' ? record.riskScore.value : null,
   }
 }

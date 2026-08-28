@@ -45,4 +45,14 @@ export const optionsColumns = columnHelper.columns([
     header: 'قیمت تقاضا',
     cell: ({ getValue }) => formatPrice(getValue()),
   }),
+  columnHelper.accessor('riskScore', {
+    header: 'امتیاز ریسک',
+    cell: ({ getValue }) => {
+      const value = getValue()
+      if (value == null) return '—'
+      return value.toLocaleString('fa-IR', {
+        maximumFractionDigits: 2,
+      })
+    },
+  }),
 ])

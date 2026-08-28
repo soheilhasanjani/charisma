@@ -1,7 +1,6 @@
 import { useSyncExternalStore } from 'react'
 
 import { useMarketRuntime } from '@/features/options/hooks/use-market-runtime'
-import { symbolRecordToSnapshot } from '@/features/options/model/snapshot-reconcile'
 import type { OptionSnapshot } from '@/features/options/types'
 
 export function useSymbolRecord(symbol: string) {
@@ -26,21 +25,11 @@ export function useRankedSymbols() {
 
 export function useOptionsTableRows(): OptionSnapshot[] {
   const runtime = useMarketRuntime()
-  const symbols = useRankedSymbols()
 
   return useSyncExternalStore(
-    (listener) => runtime.stores.symbol.subscribeAll(listener),
-    () =>
-      symbols
-        .map((symbol) => runtime.stores.symbol.toOptionSnapshot(symbol))
-        .filter((row): row is OptionSnapshot => row != null),
-    () =>
-      symbols
-        .map((symbol) => {
-          const record = runtime.stores.symbol.getSnapshot(symbol)
-          return record ? symbolRecordToSnapshot(record) : null
-        })
-        .filter((row): row is OptionSnapshot => row != null),
+    (listener) => runtime.tableRows.subscribe(listener),
+    () => runtime.tableRows.getSnapshot(),
+    () => runtime.tableRows.getSnapshot(),
   )
 }
 

@@ -37,6 +37,10 @@ export function createRanking(options: RankingOptions) {
         return record.bid?.value ?? Number.NEGATIVE_INFINITY
       case 'ask':
         return record.ask?.value ?? Number.NEGATIVE_INFINITY
+      case 'riskScore':
+        return record.riskScore?.status === 'ready'
+          ? record.riskScore.value
+          : Number.NEGATIVE_INFINITY
     }
   }
 
