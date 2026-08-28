@@ -1,8 +1,47 @@
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useOptionsSnapshot } from "@/features/options/hooks/use-options-snapshot";
+import { getUserFacingErrorMessage } from "@/lib/http/errors";
+
 export function OptionsPage() {
+  const { data, error, isError, isFetching, isPending, refetch } =
+    useOptionsSnapshot();
+
   return (
     <section className="p-4 sm:p-6">
       <div className="flex flex-col gap-4">
-        <h1 className="text-2xl font-bold">Options</h1>
+        <h1 className="text-2xl font-bold">بازار آپشن</h1>
+
+        {isPending ? (
+          <div className="flex flex-col gap-2" aria-busy="true" aria-live="polite">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        ) : isError ? (
+          <div
+            role="alert"
+            className="flex flex-col items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4"
+          >
+            <p className="text-sm text-destructive">
+              {getUserFacingErrorMessage(error)}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                void refetch();
+              }}
+              disabled={isFetching}
+            >
+              تلاش مجدد
+            </Button>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            {data.length.toLocaleString("fa-IR")} نماد بارگذاری شد
+          </p>
+        )}
       </div>
     </section>
   );
