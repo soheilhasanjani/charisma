@@ -1,19 +1,19 @@
-import { queryOptions } from "@tanstack/react-query";
+import { queryOptions } from '@tanstack/react-query'
 
-import { http } from "@/lib/http/client";
-import type { OptionSnapshot } from "@/features/options/types";
+import type { OptionSnapshot } from '@/features/options/types'
+import { http } from '@/lib/http/client'
 
-const OPTIONS_SNAPSHOT_PATH = "/api/options/snapshot";
+const OPTIONS_SNAPSHOT_PATH = '/api/options/snapshot'
 
 export const optionsQueryKeys = {
-  all: ["options"] as const,
-  snapshot: () => [...optionsQueryKeys.all, "snapshot"] as const,
-};
+  all: ['options'] as const,
+  snapshot: () => [...optionsQueryKeys.all, 'snapshot'] as const,
+}
 
 export function getOptionsSnapshot(options?: { signal?: AbortSignal }) {
   return http.get<OptionSnapshot[]>(OPTIONS_SNAPSHOT_PATH, {
     signal: options?.signal,
-  });
+  })
 }
 
 export function optionsSnapshotQueryOptions() {
@@ -22,5 +22,5 @@ export function optionsSnapshotQueryOptions() {
     queryFn: ({ signal }) => getOptionsSnapshot({ signal }),
     staleTime: Infinity,
     refetchOnWindowFocus: false,
-  });
+  })
 }

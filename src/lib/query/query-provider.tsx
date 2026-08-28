@@ -1,20 +1,20 @@
-import { lazy, Suspense, useState, type ReactNode } from "react";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from '@tanstack/react-query'
+import { lazy, type ReactNode, Suspense, useState } from 'react'
 
-import { createQueryClient } from "@/lib/query/query-client";
+import { createQueryClient } from '@/lib/query/query-client'
 
 const ReactQueryDevtools = lazy(() =>
-  import("@tanstack/react-query-devtools").then((mod) => ({
+  import('@tanstack/react-query-devtools').then((mod) => ({
     default: mod.ReactQueryDevtools,
   })),
-);
+)
 
 type QueryProviderProps = {
-  children: ReactNode;
-};
+  children: ReactNode
+}
 
 export function QueryProvider({ children }: QueryProviderProps) {
-  const [queryClient] = useState(createQueryClient);
+  const [queryClient] = useState(createQueryClient)
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -28,5 +28,5 @@ export function QueryProvider({ children }: QueryProviderProps) {
         </Suspense>
       ) : null}
     </QueryClientProvider>
-  );
+  )
 }

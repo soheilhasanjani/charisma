@@ -1,37 +1,40 @@
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient } from '@tanstack/react-query'
 
-import { ApiError } from "@/lib/http/errors";
+import { ApiError } from '@/lib/http/errors'
 
-const MAX_QUERY_RETRIES = 3;
-const DEFAULT_STALE_TIME_MS = 30_000;
-const MAX_RETRY_DELAY_MS = 30_000;
+const MAX_QUERY_RETRIES = 3
+const DEFAULT_STALE_TIME_MS = 30_000
+const MAX_RETRY_DELAY_MS = 30_000
 
-export function shouldRetryQuery(failureCount: number, error: unknown): boolean {
+export function shouldRetryQuery(
+  failureCount: number,
+  error: unknown,
+): boolean {
   if (failureCount >= MAX_QUERY_RETRIES) {
-    return false;
+    return false
   }
 
   if (!(error instanceof ApiError)) {
-    return true;
+    return true
   }
 
   if (error.isCanceled) {
-    return false;
+    return false
   }
 
   if (error.isNetworkError || error.isTimeout) {
-    return true;
+    return true
   }
 
   if (error.status === 408 || error.status === 429) {
-    return true;
+    return true
   }
 
-  return error.status !== undefined && error.status >= 500;
+  return error.status !== undefined && error.status >= 500
 }
 
 export function queryRetryDelay(attemptIndex: number): number {
-  return Math.min(1_000 * 2 ** attemptIndex, MAX_RETRY_DELAY_MS);
+  return Math.min(1_000 * 2 ** attemptIndex, MAX_RETRY_DELAY_MS)
 }
 
 export function createQueryClient() {
@@ -47,5 +50,5 @@ export function createQueryClient() {
         retry: false,
       },
     },
-  });
+  })
 }

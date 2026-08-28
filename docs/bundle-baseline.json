@@ -1,0 +1,19 @@
+{
+  "measuredAt": "2026-08-28T23:06:31.906Z",
+  "totalGzipBytes": 175600,
+  "chunks": {
+    "index-0ahQPG7P.css": 8825,
+    "index-BBVrBLzG.js": 98,
+    "index-CnIB7wyK.js": 61754,
+    "vendor-base-ui-BGzdbbBe.js": 44405,
+    "vendor-react-DgBYbIvo.js": 60518
+  },
+  "libraryMeasurements": {
+    "@tanstack/react-table": {
+      "gzipBytes": 13201,
+      "gzipKiB": 12.9,
+      "budgetKiB": 8,
+      "withinBudget": false
+    }
+  }
+}

@@ -1,8 +1,8 @@
-import { AppLayout } from "@/components/layouts/app-layout";
-import { ThemeProvider } from "@/components/theme-provider";
-import { DirectionProvider } from "@/components/primitives/direction";
-import { OptionsPage } from "@/features/options/pages/options-page";
-import { QueryProvider } from "@/lib/query/query-provider";
+import { AppLayout } from '@/components/layouts/app-layout'
+import { DirectionProvider } from '@/components/primitives/direction'
+import { ThemeProvider } from '@/components/theme-provider'
+import { OptionsPage } from '@/features/options/pages/options-page'
+import { QueryProvider } from '@/lib/query/query-provider'
 
 function App() {
   return (
@@ -16,7 +16,7 @@ function App() {
         </DirectionProvider>
       </QueryProvider>
     </ThemeProvider>
-  );
+  )
 }
 
-export default App;
+export default App

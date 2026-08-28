@@ -38,105 +38,108 @@ function rand(min: number, max: number) {
 }
 
 const optionsLink = ws.link('ws://localhost/ws/options')
-const optionsHandler = optionsLink.addEventListener('connection', ({ client }) => {
-  console.log('[MSW-WS] client connected')
+const optionsHandler = optionsLink.addEventListener(
+  'connection',
+  ({ client }) => {
+    console.log('[MSW-WS] client connected')
 
-  const sendJson = (payload: Record<string, unknown>) => {
-    client.send(JSON.stringify(payload))
-  }
+    const sendJson = (payload: Record<string, unknown>) => {
+      client.send(JSON.stringify(payload))
+    }
 
-  const pickRandom = (list: string[]) =>
-    list[Math.floor(Math.random() * list.length)]
+    const pickRandom = (list: string[]) =>
+      list[Math.floor(Math.random() * list.length)]
 
-  const subscriptions = new Set<string>()
+    const subscriptions = new Set<string>()
 
-  const getActiveSymbols = () =>
-    subscriptions.size ? [...subscriptions] : symbols
+    const getActiveSymbols = () =>
+      subscriptions.size ? [...subscriptions] : symbols
 
-  const snapshot = (list: string[]) => {
-    list.forEach(symbol => {
-      const price = +rand(1, 20).toFixed(2)
-      sendJson({
-        type: 'ticker',
-        symbol,
-        last: price,
-        bid: price - 0.1,
-        ask: price + 0.1,
-      })
-    })
-  }
-
-  // Initial snapshot for default subscriptions
-  snapshot(getActiveSymbols())
-
-  client.addEventListener('message', event => {
-    try {
-      const payload = JSON.parse(String(event.data)) as {
-        type?: string
-        symbols?: string[]
-      }
-
-      if (payload.type === 'subscribe' && Array.isArray(payload.symbols)) {
-        subscriptions.clear()
-        payload.symbols.forEach(sym => {
-          if (symbols.includes(sym)) subscriptions.add(sym)
+    const snapshot = (list: string[]) => {
+      list.forEach((symbol) => {
+        const price = +rand(1, 20).toFixed(2)
+        sendJson({
+          type: 'ticker',
+          symbol,
+          last: price,
+          bid: price - 0.1,
+          ask: price + 0.1,
         })
+      })
+    }
 
-        const active = getActiveSymbols()
-        sendJson({ type: 'subscribed', symbols: active })
-        snapshot(active)
+    // Initial snapshot for default subscriptions
+    snapshot(getActiveSymbols())
+
+    client.addEventListener('message', (event) => {
+      try {
+        const payload = JSON.parse(String(event.data)) as {
+          type?: string
+          symbols?: string[]
+        }
+
+        if (payload.type === 'subscribe' && Array.isArray(payload.symbols)) {
+          subscriptions.clear()
+          payload.symbols.forEach((sym) => {
+            if (symbols.includes(sym)) subscriptions.add(sym)
+          })
+
+          const active = getActiveSymbols()
+          sendJson({ type: 'subscribed', symbols: active })
+          snapshot(active)
+        }
+      } catch (err) {
+        console.error('Failed to parse incoming message', err)
       }
-    } catch (err) {
-      console.error('Failed to parse incoming message', err)
-    }
-  })
+    })
 
-  // Start pushing updates
-  const interval = setInterval(() => {
-    const t = Math.random()
-    const activeSymbols = getActiveSymbols()
-    const sym = pickRandom(activeSymbols)
+    // Start pushing updates
+    const interval = setInterval(() => {
+      const t = Math.random()
+      const activeSymbols = getActiveSymbols()
+      const sym = pickRandom(activeSymbols)
 
-    if (t < 0.5) {
-      const last = +rand(1, 20).toFixed(2)
-      sendJson({
-        type: 'ticker',
-        symbol: sym,
-        last,
-        bid: +(last - rand(0,0.2)).toFixed(2),
-        ask: +(last + rand(0,0.2)).toFixed(2)
-      })
-    } else if (t < 0.75) {
-      sendJson({
-        type: 'greeks',
-        symbol: sym,
-        delta: +rand(0,1).toFixed(2),
-        gamma: +rand(0,0.5).toFixed(2),
-        theta: +(-rand(0,0.1)).toFixed(3),
-        vega: +rand(0,2).toFixed(2)
-      })
-    } else if (t < 0.95) {
-      sendJson({
-        type: 'trade',
-        symbol: sym,
-        price: +rand(1, 20).toFixed(2),
-        size: Math.floor(rand(1, 100)),
-        side: Math.random() > 0.5 ? 'buy' : 'sell',
-        time: new Date().toLocaleTimeString()
-      })
-    } else {
-      const statuses = ['connected', 'slow', 'disconnected'] as const
-      sendJson({
-        type: 'status',
-        status: statuses[Math.floor(Math.random() * 3)],
-      })
-    }
-  }, 1200)
+      if (t < 0.5) {
+        const last = +rand(1, 20).toFixed(2)
+        sendJson({
+          type: 'ticker',
+          symbol: sym,
+          last,
+          bid: +(last - rand(0, 0.2)).toFixed(2),
+          ask: +(last + rand(0, 0.2)).toFixed(2),
+        })
+      } else if (t < 0.75) {
+        sendJson({
+          type: 'greeks',
+          symbol: sym,
+          delta: +rand(0, 1).toFixed(2),
+          gamma: +rand(0, 0.5).toFixed(2),
+          theta: +(-rand(0, 0.1)).toFixed(3),
+          vega: +rand(0, 2).toFixed(2),
+        })
+      } else if (t < 0.95) {
+        sendJson({
+          type: 'trade',
+          symbol: sym,
+          price: +rand(1, 20).toFixed(2),
+          size: Math.floor(rand(1, 100)),
+          side: Math.random() > 0.5 ? 'buy' : 'sell',
+          time: new Date().toLocaleTimeString(),
+        })
+      } else {
+        const statuses = ['connected', 'slow', 'disconnected'] as const
+        sendJson({
+          type: 'status',
+          status: statuses[Math.floor(Math.random() * 3)],
+        })
+      }
+    }, 1200)
 
-  client.addEventListener('close', () => {
-    console.log('[MSW-WS] connection closed')
-    clearInterval(interval)
-  })
-})
+    client.addEventListener('close', () => {
+      console.log('[MSW-WS] connection closed')
+      clearInterval(interval)
+    })
+  },
+)
 
 export const wsHandlers = [optionsHandler]

@@ -1,7 +1,7 @@
-const priceFormatter = new Intl.NumberFormat("fa-IR", {
+const priceFormatter = new Intl.NumberFormat('fa-IR', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
-});
+})
 
 /**
  * Formats a numeric price for display with the `fa-IR` locale
@@ -10,5 +10,5 @@ const priceFormatter = new Intl.NumberFormat("fa-IR", {
  * @param value - Price to format
  */
 export function formatPrice(value: number) {
-  return priceFormatter.format(value);
+  return priceFormatter.format(value)
 }

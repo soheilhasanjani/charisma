@@ -6,7 +6,7 @@ function rand(min: number, max: number) {
 }
 
 const buildSnapshot = () =>
-  symbols.map(symbol => {
+  symbols.map((symbol) => {
     const last = +rand(1, 20).toFixed(2)
     return {
       symbol,
@@ -25,4 +25,3 @@ export const httpHandlers = [
     return HttpResponse.json({ data: buildSnapshot() })
   }),
 ]
-

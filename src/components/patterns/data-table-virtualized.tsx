@@ -1,47 +1,47 @@
-import { useEffect, useRef } from "react";
 import {
-  useTable,
   type ColumnDef,
   type ReactTable,
   type Row,
   type RowData,
-} from "@tanstack/react-table";
+  useTable,
+} from '@tanstack/react-table'
 import {
   useVirtualizer,
   type VirtualItem,
   type Virtualizer,
-} from "@tanstack/react-virtual";
+} from '@tanstack/react-virtual'
+import { useEffect, useRef } from 'react'
 
+import {
+  type DataTableFeatures,
+  dataTableFeatures,
+} from '@/components/patterns/data-table-features'
 import {
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/primitives/table";
-import {
-  dataTableFeatures,
-  type DataTableFeatures,
-} from "@/components/patterns/data-table-features";
+} from '@/components/primitives/table'
 
-const DATA_TABLE_ROW_HEIGHT = 37;
+const DATA_TABLE_ROW_HEIGHT = 37
 
 const canMeasureRowHeight =
-  typeof navigator !== "undefined" &&
-  navigator.userAgent.indexOf("Firefox") === -1;
+  typeof navigator !== 'undefined' &&
+  navigator.userAgent.indexOf('Firefox') === -1
 
 function estimateDataTableRowSize() {
-  return DATA_TABLE_ROW_HEIGHT;
+  return DATA_TABLE_ROW_HEIGHT
 }
 
 function measureTableRow(element: Element) {
-  return element.getBoundingClientRect().height;
+  return element.getBoundingClientRect().height
 }
 
 type DataTableVirtualizedProps<TData extends RowData> = {
-  columns: ColumnDef<DataTableFeatures, TData>[];
-  data: TData[];
-};
+  columns: ColumnDef<DataTableFeatures, TData>[]
+  data: TData[]
+}
 
 export function DataTableVirtualized<TData extends RowData>({
   columns,
@@ -51,19 +51,19 @@ export function DataTableVirtualized<TData extends RowData>({
     features: dataTableFeatures,
     data,
     columns,
-  });
+  })
 
-  const rows = table.getRowModel().rows;
+  const rows = table.getRowModel().rows
 
   return (
     <div className="flex h-[min(50rem,70dvh)] flex-col overflow-hidden rounded-lg border">
-      <div className="h-10 shrink-0 border-b bg-background">
+      <div className="bg-background h-10 shrink-0 border-b">
         <table className="grid h-full w-full caption-bottom text-sm">
           <TableHeader className="grid h-full border-b-0">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
                 key={headerGroup.id}
-                className="flex h-10 w-full border-b-0 bg-background hover:bg-transparent"
+                className="bg-background flex h-10 w-full border-b-0 hover:bg-transparent"
               >
                 {headerGroup.headers.map((header) => (
                   <TableHead
@@ -96,18 +96,18 @@ export function DataTableVirtualized<TData extends RowData>({
         </div>
       )}
     </div>
-  );
+  )
 }
 
 type DataTableVirtualizedBodyProps<TData extends RowData> = {
-  table: ReactTable<DataTableFeatures, TData>;
-};
+  table: ReactTable<DataTableFeatures, TData>
+}
 
 function DataTableVirtualizedBody<TData extends RowData>({
   table,
 }: DataTableVirtualizedBodyProps<TData>) {
-  const tableContainerRef = useRef<HTMLDivElement>(null);
-  const { rows } = table.getRowModel();
+  const tableContainerRef = useRef<HTMLDivElement>(null)
+  const { rows } = table.getRowModel()
 
   // Keep the virtualizer in the lowest component to avoid unnecessary re-renders.
   // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual cannot be memoized by React Compiler
@@ -118,13 +118,13 @@ function DataTableVirtualizedBody<TData extends RowData>({
     getScrollElement: () => tableContainerRef.current,
     measureElement: canMeasureRowHeight ? measureTableRow : undefined,
     overscan: 5,
-  });
+  })
 
   useEffect(() => {
-    rowVirtualizer.measure();
+    rowVirtualizer.measure()
     // Initial measure after mount; the virtualizer instance is stable enough here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [])
 
   return (
     <div
@@ -142,10 +142,10 @@ function DataTableVirtualizedBody<TData extends RowData>({
           }}
         >
           {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-            const row = rows[virtualRow.index];
+            const row = rows[virtualRow.index]
 
             if (!row) {
-              return null;
+              return null
             }
 
             return (
@@ -156,20 +156,20 @@ function DataTableVirtualizedBody<TData extends RowData>({
                 table={table}
                 virtualRow={virtualRow}
               />
-            );
+            )
           })}
         </TableBody>
       </table>
     </div>
-  );
+  )
 }
 
 type DataTableVirtualizedRowProps<TData extends RowData> = {
-  row: Row<DataTableFeatures, TData>;
-  rowVirtualizer: Virtualizer<HTMLDivElement, HTMLTableRowElement>;
-  table: ReactTable<DataTableFeatures, TData>;
-  virtualRow: VirtualItem;
-};
+  row: Row<DataTableFeatures, TData>
+  rowVirtualizer: Virtualizer<HTMLDivElement, HTMLTableRowElement>
+  table: ReactTable<DataTableFeatures, TData>
+  virtualRow: VirtualItem
+}
 
 function DataTableVirtualizedRow<TData extends RowData>({
   row,
@@ -181,7 +181,7 @@ function DataTableVirtualizedRow<TData extends RowData>({
     <TableRow
       data-index={virtualRow.index}
       ref={(node) => {
-        rowVirtualizer.measureElement(node);
+        rowVirtualizer.measureElement(node)
       }}
       className="absolute flex w-full"
       style={{
@@ -194,5 +194,5 @@ function DataTableVirtualizedRow<TData extends RowData>({
         </TableCell>
       ))}
     </TableRow>
-  );
+  )
 }

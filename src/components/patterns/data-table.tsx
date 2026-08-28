@@ -1,5 +1,9 @@
-import { useTable, type ColumnDef, type RowData } from "@tanstack/react-table";
+import { type ColumnDef, type RowData, useTable } from '@tanstack/react-table'
 
+import {
+  type DataTableFeatures,
+  dataTableFeatures,
+} from '@/components/patterns/data-table-features'
 import {
   Table,
   TableBody,
@@ -7,16 +11,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/primitives/table";
-import {
-  dataTableFeatures,
-  type DataTableFeatures,
-} from "@/components/patterns/data-table-features";
+} from '@/components/primitives/table'
 
 type DataTableProps<TData extends RowData> = {
-  columns: ColumnDef<DataTableFeatures, TData>[];
-  data: TData[];
-};
+  columns: ColumnDef<DataTableFeatures, TData>[]
+  data: TData[]
+}
 
 export function DataTable<TData extends RowData>({
   columns,
@@ -26,9 +26,9 @@ export function DataTable<TData extends RowData>({
     features: dataTableFeatures,
     data,
     columns,
-  });
+  })
 
-  const rows = table.getRowModel().rows;
+  const rows = table.getRowModel().rows
 
   return (
     <div className="overflow-hidden rounded-lg border">
@@ -67,5 +67,5 @@ export function DataTable<TData extends RowData>({
         </TableBody>
       </Table>
     </div>
-  );
+  )
 }
