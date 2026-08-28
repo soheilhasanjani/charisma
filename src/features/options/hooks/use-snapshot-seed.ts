@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useLayoutEffect } from 'react'
 
 import { useMarketRuntime } from '@/features/options/hooks/use-market-runtime'
 import { useOptionsSnapshot } from '@/features/options/hooks/use-options-snapshot'
@@ -8,7 +8,7 @@ export function useSnapshotSeed() {
   const runtime = useMarketRuntime()
   const { data } = useOptionsSnapshot()
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!data?.length) return
     runtime.applySnapshot(data)
   }, [data, runtime])

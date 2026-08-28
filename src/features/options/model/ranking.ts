@@ -1,6 +1,7 @@
 import type { SortState, SymbolRecord } from '@/features/options/model/types'
 
 const RANKING_THROTTLE_MS = 400
+const STABLE_EMPTY_ORDER: string[] = []
 
 export type RankingOptions = {
   getSymbols: () => string[]
@@ -9,8 +10,22 @@ export type RankingOptions = {
   isOrderLocked: () => boolean
 }
 
+function ordersEqual(left: string[], right: string[]) {
+  if (left.length !== right.length) {
+    return false
+  }
+
+  for (let index = 0; index < left.length; index += 1) {
+    if (left[index] !== right[index]) {
+      return false
+    }
+  }
+
+  return true
+}
+
 export function createRanking(options: RankingOptions) {
-  let cachedOrder: string[] = []
+  let cachedOrder: string[] = STABLE_EMPTY_ORDER
   const listeners = new Set<() => void>()
   let pending = false
   let timer: ReturnType<typeof setTimeout> | null = null
@@ -71,26 +86,39 @@ export function createRanking(options: RankingOptions) {
     }
 
     pending = false
-    cachedOrder = computeOrder()
+    const next = computeOrder()
+    const normalized = next.length === 0 ? STABLE_EMPTY_ORDER : next
+
+    if (ordersEqual(cachedOrder, normalized)) {
+      return
+    }
+
+    cachedOrder = normalized
     notify()
   }
 
   function scheduleRecompute(force = false) {
+    if (force) {
+      if (timer != null) {
+        clearTimeout(timer)
+        timer = null
+      }
+      recompute(true)
+      return
+    }
+
     if (timer != null) {
       clearTimeout(timer)
     }
 
     timer = setTimeout(() => {
       timer = null
-      recompute(force)
+      recompute(false)
     }, RANKING_THROTTLE_MS)
   }
 
   return {
     getSnapshot() {
-      if (cachedOrder.length === 0) {
-        cachedOrder = computeOrder()
-      }
       return cachedOrder
     },
 
@@ -123,3 +151,5 @@ export const DEFAULT_SORT: SortState = {
   column: 'symbol',
   direction: 'asc',
 }
+
+export { STABLE_EMPTY_ORDER }

@@ -119,6 +119,32 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+@keyframes price-flash-up {
+  from {
+    background-color: color-mix(in oklch, var(--chart-2) 35%, transparent);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+@keyframes price-flash-down {
+  from {
+    background-color: color-mix(in oklch, var(--destructive) 30%, transparent);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+@utility animate-price-flash-up {
+  animation: price-flash-up 600ms ease-out;
+}
+
+@utility animate-price-flash-down {
+  animation: price-flash-down 600ms ease-out;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

@@ -38,6 +38,7 @@ export function createMarketRuntime(options: MarketRuntimeOptions = {}) {
   const viewportStore = createViewportStore()
 
   let sortState: SortState = DEFAULT_SORT
+  const sortListeners = new Set<() => void>()
   let orderLocked = false
   let started = false
   let computeMode = options.riskComputeMode ?? readInitialComputeMode()
@@ -158,8 +159,22 @@ export function createMarketRuntime(options: MarketRuntimeOptions = {}) {
       socket.subscribe(symbols)
     },
 
+    getSortSnapshot() {
+      return sortState
+    },
+
+    subscribeSort(listener: () => void) {
+      sortListeners.add(listener)
+      return () => {
+        sortListeners.delete(listener)
+      }
+    },
+
     setSort(next: SortState) {
       sortState = next
+      for (const listener of sortListeners) {
+        listener()
+      }
       ranking.setSort()
     },
 
@@ -171,6 +186,14 @@ export function createMarketRuntime(options: MarketRuntimeOptions = {}) {
     },
 
     setViewportSymbols(symbols: string[]) {
+      const current = viewportStore.getSnapshot().symbols
+      if (
+        current.length === symbols.length &&
+        current.every((symbol, index) => symbol === symbols[index])
+      ) {
+        return
+      }
+
       viewportStore.setSymbols(symbols)
       viewportStore.flush()
     },

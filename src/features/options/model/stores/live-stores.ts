@@ -124,11 +124,12 @@ export type FeedStatusStore = ReturnType<typeof createFeedStatusStore>
 
 export function createSelectionStore() {
   const store = createSingletonStore<string[]>()
-  store.set(SINGLETON_KEY, [])
+  const emptySelection: string[] = []
+  store.set(SINGLETON_KEY, emptySelection)
 
   return {
     getSnapshot() {
-      return store.get(SINGLETON_KEY) ?? []
+      return store.get(SINGLETON_KEY) ?? emptySelection
     },
 
     set(symbols: string[]) {
@@ -149,11 +150,12 @@ export type SelectionStore = ReturnType<typeof createSelectionStore>
 
 export function createViewportStore() {
   const store = createSingletonStore<ViewportRecord>()
-  store.set(SINGLETON_KEY, { symbols: [] })
+  const emptyViewport: ViewportRecord = { symbols: [] }
+  store.set(SINGLETON_KEY, emptyViewport)
 
   return {
     getSnapshot() {
-      return store.get(SINGLETON_KEY) ?? { symbols: [] }
+      return store.get(SINGLETON_KEY) ?? emptyViewport
     },
 
     getVisibleSymbols() {

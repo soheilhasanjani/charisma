@@ -1,8 +1,7 @@
-import { DataTableVirtualized } from '@/components/patterns/data-table-virtualized'
 import { Button } from '@/components/primitives/button'
 import { Skeleton } from '@/components/primitives/skeleton'
-import { optionsColumns } from '@/features/options/columns'
-import { useOptionsTableRows } from '@/features/options/hooks/use-market-data'
+import { MarketGrid } from '@/features/options/components/market-grid'
+import { useRankedSymbols } from '@/features/options/hooks/use-market-data'
 import { useOptionsSnapshot } from '@/features/options/hooks/use-options-snapshot'
 import { useSnapshotSeed } from '@/features/options/hooks/use-snapshot-seed'
 import { getUserFacingErrorMessage } from '@/lib/http/errors'
@@ -10,11 +9,16 @@ import { getUserFacingErrorMessage } from '@/lib/http/errors'
 export function OptionsPage() {
   const { data, error, isError, isFetching, isPending, refetch } =
     useOptionsSnapshot()
-  const rows = useOptionsTableRows()
+  const symbols = useRankedSymbols()
 
   useSnapshotSeed()
 
-  const tableData = rows.length > 0 ? rows : (data ?? [])
+  const emptyKind =
+    symbols.length === 0
+      ? (data?.length ?? 0) > 0
+        ? 'filter'
+        : 'snapshot'
+      : undefined
 
   return (
     <section className="p-4 sm:p-6">
@@ -51,7 +55,7 @@ export function OptionsPage() {
             </Button>
           </div>
         ) : (
-          <DataTableVirtualized columns={optionsColumns} data={tableData} />
+          <MarketGrid symbols={symbols} emptyKind={emptyKind} />
         )}
       </div>
     </section>
