@@ -22,9 +22,16 @@ async function enableMocks() {
   await worker.start({ onUnhandledRequest: 'bypass' })
 }
 
+async function enableFeedSmoke() {
+  if (!import.meta.env.DEV) return
+  const { startFeedSmoke } = await import('@/core/realtime/feed-smoke')
+  startFeedSmoke()
+}
+
 async function bootstrap() {
   await enableReactScan()
   await enableMocks()
+  await enableFeedSmoke()
 
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
