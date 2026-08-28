@@ -10,6 +10,7 @@ export function useSnapshotSeed() {
 
   useLayoutEffect(() => {
     if (!data?.length) return
+    if (window.location.search.includes('perf=1')) return
     runtime.applySnapshot(data)
   }, [data, runtime])
 }

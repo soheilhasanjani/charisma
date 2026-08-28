@@ -34,13 +34,14 @@ export type RiskEngineOptions = {
 
 export function createRiskEngine(options: RiskEngineOptions) {
   const memo = new Map<string, { hash: number; score: RiskScoreState }>()
-  const pending = new Map<number, WorkRow[]>()
+  const pending = new Map<number, { rows: WorkRow[]; sentAt: number }>()
   const metrics: RiskEngineMetrics = {
     batchesSent: 0,
     batchesDropped: 0,
     memoHits: 0,
     syncFallback: false,
     lastBatchMs: 0,
+    lastWorkerRoundTripMs: 0,
   }
 
   let worker: Worker | null = null
@@ -153,7 +154,7 @@ export function createRiskEngine(options: RiskEngineOptions) {
     const started = performance.now()
     const seq = ++sequence
     metrics.batchesSent += 1
-    pending.set(seq, [...rows])
+    pending.set(seq, { rows: [...rows], sentAt: performance.now() })
 
     const inputBuffer = packBatch(rows.map((row) => row.inputs))
     reusableBuffer = inputBuffer
@@ -176,6 +177,10 @@ export function createRiskEngine(options: RiskEngineOptions) {
     const meta = pending.get(message.sequence)
     pending.delete(message.sequence)
 
+    if (meta) {
+      metrics.lastWorkerRoundTripMs = performance.now() - meta.sentAt
+    }
+
     if (message.sequence < lastAppliedSequence) {
       metrics.batchesDropped += 1
       reusableBuffer = message.buffer
@@ -189,7 +194,7 @@ export function createRiskEngine(options: RiskEngineOptions) {
       const symbol = message.symbols[index]
       if (!symbol) continue
 
-      const hash = meta?.[index]?.hash
+      const hash = meta?.rows[index]?.hash
       publish(symbol, scoreFromRawValue(message.scores[index]), hash)
     }
   }

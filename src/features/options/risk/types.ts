@@ -14,4 +14,5 @@ export type RiskEngineMetrics = {
   memoHits: number
   syncFallback: boolean
   lastBatchMs: number
+  lastWorkerRoundTripMs: number
 }

@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { AppLayout } from '@/components/layouts/app-layout'
@@ -11,6 +12,13 @@ import { OptionsPage } from '@/features/options/pages/options-page'
 import { MarketRuntimeProvider } from '@/features/options/providers/market-runtime-provider'
 import { LocaleProvider, useLocale } from '@/i18n/locale-provider'
 import { QueryProvider } from '@/lib/query/query-provider'
+
+const LazyDevPerfGate = import.meta.env.DEV
+  ? lazy(async () => {
+      const module = await import('@/dev/dev-perf-gate')
+      return { default: module.DevPerfGate }
+    })
+  : null
 
 function AppShell() {
   const { t } = useTranslation()
@@ -31,6 +39,11 @@ function AppShell() {
       >
         <OptionsPage />
       </AppLayout>
+      {LazyDevPerfGate ? (
+        <Suspense fallback={null}>
+          <LazyDevPerfGate />
+        </Suspense>
+      ) : null}
     </DirectionProvider>
   )
 }

@@ -14,6 +14,7 @@ import {
   OptionTypeCell,
 } from '@/features/options/lib/option-symbol-cells'
 import { EMPTY_DISPLAY } from '@/features/options/lib/parse-option-symbol'
+import { recordRowRender } from '@/features/options/lib/render-instrumentation'
 import type { SymbolRecord } from '@/features/options/model/types'
 import type { RiskScoreState } from '@/features/options/risk/types'
 import { getActiveFormatLocale } from '@/i18n/format-locale'
@@ -47,6 +48,11 @@ export const MarketRow = memo(function MarketRow({
   onActivate,
   rowRef,
 }: MarketRowProps) {
+  if (import.meta.env.DEV) {
+    // Perf HUD reads per-row render counts via render-instrumentation.
+    recordRowRender(symbol)
+  }
+
   const record = useSymbolRecord(symbol)
 
   return (
