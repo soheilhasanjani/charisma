@@ -1,5 +1,3 @@
-import { isAxiosError } from 'axios'
-
 type ApiErrorInit = {
   message: string
   status?: number
@@ -48,36 +46,68 @@ function messageFromBody(data: unknown): string | undefined {
   return undefined
 }
 
+function isAbortError(error: unknown): boolean {
+  if (error instanceof DOMException && error.name === 'AbortError') {
+    return true
+  }
+
+  return error instanceof Error && error.name === 'AbortError'
+}
+
+function isTimeoutError(error: unknown): boolean {
+  if (error instanceof DOMException && error.name === 'TimeoutError') {
+    return true
+  }
+
+  return (
+    error instanceof Error &&
+    (error.name === 'TimeoutError' ||
+      error.message.toLowerCase().includes('timeout'))
+  )
+}
+
 export function toApiError(error: unknown): ApiError {
   if (error instanceof ApiError) {
     return error
   }
 
-  if (isAxiosError(error)) {
-    const status = error.response?.status
-    const code = error.code
-    const isCanceled = code === 'ERR_CANCELED' || error.name === 'CanceledError'
-    const isTimeout =
-      code === 'ECONNABORTED' ||
-      code === 'ETIMEDOUT' ||
-      error.message.toLowerCase().includes('timeout')
-
+  if (isAbortError(error)) {
+    const message = error instanceof Error ? error.message : 'Request canceled'
     return new ApiError({
-      message:
-        messageFromBody(error.response?.data) ??
-        error.message ??
-        'Request failed',
-      status,
-      code,
-      isNetworkError: !error.response && !isCanceled,
-      isTimeout: isTimeout && !isCanceled,
-      isCanceled,
+      message,
+      isCanceled: true,
+      cause: error,
+    })
+  }
+
+  if (isTimeoutError(error)) {
+    const message = error instanceof Error ? error.message : 'Request timed out'
+    return new ApiError({
+      message,
+      isTimeout: true,
+      cause: error,
+    })
+  }
+
+  if (error instanceof TypeError) {
+    return new ApiError({
+      message: error.message,
+      isNetworkError: true,
       cause: error,
     })
   }
 
   if (error instanceof Error) {
-    return new ApiError({ message: error.message, cause: error })
+    const status =
+      typeof (error as Error & { status?: number }).status === 'number'
+        ? (error as Error & { status?: number }).status
+        : undefined
+
+    return new ApiError({
+      message: messageFromBody(error.cause) ?? error.message,
+      status,
+      cause: error,
+    })
   }
 
   return new ApiError({ message: 'Unexpected error', cause: error })

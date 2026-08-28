@@ -2,12 +2,19 @@ import { DataTableVirtualized } from '@/components/patterns/data-table-virtualiz
 import { Button } from '@/components/primitives/button'
 import { Skeleton } from '@/components/primitives/skeleton'
 import { optionsColumns } from '@/features/options/columns'
+import { useOptionsTableRows } from '@/features/options/hooks/use-market-data'
 import { useOptionsSnapshot } from '@/features/options/hooks/use-options-snapshot'
+import { useSnapshotSeed } from '@/features/options/hooks/use-snapshot-seed'
 import { getUserFacingErrorMessage } from '@/lib/http/errors'
 
 export function OptionsPage() {
   const { data, error, isError, isFetching, isPending, refetch } =
     useOptionsSnapshot()
+  const rows = useOptionsTableRows()
+
+  useSnapshotSeed()
+
+  const tableData = rows.length > 0 ? rows : (data ?? [])
 
   return (
     <section className="p-4 sm:p-6">
@@ -44,7 +51,7 @@ export function OptionsPage() {
             </Button>
           </div>
         ) : (
-          <DataTableVirtualized columns={optionsColumns} data={data ?? []} />
+          <DataTableVirtualized columns={optionsColumns} data={tableData} />
         )}
       </div>
     </section>

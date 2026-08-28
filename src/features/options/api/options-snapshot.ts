@@ -2,6 +2,7 @@ import { queryOptions } from '@tanstack/react-query'
 
 import type { OptionSnapshot } from '@/features/options/types'
 import { http } from '@/lib/http/client'
+import { SNAPSHOT_STALE_TIME_MS } from '@/lib/query/constants'
 
 const OPTIONS_SNAPSHOT_PATH = '/api/options/snapshot'
 
@@ -20,7 +21,8 @@ export function optionsSnapshotQueryOptions() {
   return queryOptions({
     queryKey: optionsQueryKeys.snapshot(),
     queryFn: ({ signal }) => getOptionsSnapshot({ signal }),
-    staleTime: Infinity,
+    staleTime: SNAPSHOT_STALE_TIME_MS,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   })
 }
