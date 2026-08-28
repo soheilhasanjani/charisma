@@ -24,7 +24,7 @@ import {
   type DataTableFeatures,
 } from "@/components/patterns/data-table-features";
 
-const DATA_TABLE_ROW_HEIGHT = 33;
+const DATA_TABLE_ROW_HEIGHT = 37;
 
 const canMeasureRowHeight =
   typeof navigator !== "undefined" &&
