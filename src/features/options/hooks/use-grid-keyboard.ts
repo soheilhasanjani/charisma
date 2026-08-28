@@ -6,6 +6,7 @@ type UseGridKeyboardOptions = {
   scrollRef: React.RefObject<HTMLDivElement | null>
   rowVirtualizer: Virtualizer<HTMLDivElement, Element>
   rowHeight: number
+  onRowActivate?: (symbol: string) => void
 }
 
 export function useGridKeyboard({
@@ -13,6 +14,7 @@ export function useGridKeyboard({
   scrollRef,
   rowVirtualizer,
   rowHeight,
+  onRowActivate,
 }: UseGridKeyboardOptions) {
   const [focusedIndex, setFocusedIndex] = useState(0)
   const rowRefs = useRef(new Map<string, HTMLDivElement>())
@@ -94,12 +96,18 @@ export function useGridKeyboard({
           return
         case 'Enter':
           event.preventDefault()
+          {
+            const symbol = symbols[activeIndex]
+            if (symbol) {
+              onRowActivate?.(symbol)
+            }
+          }
           return
         default:
           return
       }
     },
-    [activeIndex, focusIndex, pageStep, symbols.length],
+    [activeIndex, focusIndex, onRowActivate, pageStep, symbols],
   )
 
   const handleGridKeyDown = useCallback(

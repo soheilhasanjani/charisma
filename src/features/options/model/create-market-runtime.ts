@@ -86,6 +86,14 @@ export function createMarketRuntime(options: MarketRuntimeOptions = {}) {
   })
   rankingHolder.ranking = ranking
 
+  const knownSymbolListeners = new Set<() => void>()
+
+  function notifyKnownSymbols() {
+    for (const listener of knownSymbolListeners) {
+      listener()
+    }
+  }
+
   const tableRows = createTableRowsCache({
     getSymbols: () => ranking.getSnapshot(),
     getRow: (symbol) => symbolStore.toOptionSnapshot(symbol),
@@ -111,6 +119,7 @@ export function createMarketRuntime(options: MarketRuntimeOptions = {}) {
     scheduler.flushNow()
     ranking.invalidate(true)
     tableRows.invalidate()
+    notifyKnownSymbols()
     log('snapshot resync applied', { rows: snapshots.length })
   }
 
@@ -150,9 +159,21 @@ export function createMarketRuntime(options: MarketRuntimeOptions = {}) {
       scheduler.flushNow()
       ranking.invalidate(true)
       tableRows.invalidate()
+      notifyKnownSymbols()
     },
 
     resyncSnapshot,
+
+    getKnownSymbols() {
+      return controller.getKnownSymbols()
+    },
+
+    subscribeKnownSymbols(listener: () => void) {
+      knownSymbolListeners.add(listener)
+      return () => {
+        knownSymbolListeners.delete(listener)
+      }
+    },
 
     subscribe(symbols: string[]) {
       selectionStore.set(symbols)

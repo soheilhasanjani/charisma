@@ -29,6 +29,7 @@ type MarketRowProps = {
   isFocused: boolean
   onFocus: () => void
   onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => void
+  onActivate?: () => void
   rowRef?: (node: HTMLDivElement | null) => void
 }
 
@@ -41,6 +42,7 @@ export const MarketRow = memo(function MarketRow({
   isFocused,
   onFocus,
   onKeyDown,
+  onActivate,
   rowRef,
 }: MarketRowProps) {
   const record = useSymbolRecord(symbol)
@@ -66,6 +68,9 @@ export const MarketRow = memo(function MarketRow({
       }}
       onFocus={onFocus}
       onKeyDown={onKeyDown}
+      onClick={() => {
+        onActivate?.()
+      }}
     >
       {MARKET_COLUMNS.map((column, columnIndex) => (
         <MarketGridCell

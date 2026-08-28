@@ -16,13 +16,19 @@ type MarketGridProps = {
   symbols: string[]
   emptyKind?: MarketGridEmptyKind
   className?: string
+  onRowActivate?: (symbol: string) => void
 }
 
 const canMeasureRowHeight =
   typeof navigator !== 'undefined' &&
   navigator.userAgent.indexOf('Firefox') === -1
 
-export function MarketGrid({ symbols, emptyKind, className }: MarketGridProps) {
+export function MarketGrid({
+  symbols,
+  emptyKind,
+  className,
+  onRowActivate,
+}: MarketGridProps) {
   const runtime = useMarketRuntime()
   const scrollRef = useRef<HTMLDivElement>(null)
   const [isScrolling, setIsScrolling] = useState(false)
@@ -45,6 +51,7 @@ export function MarketGrid({ symbols, emptyKind, className }: MarketGridProps) {
     scrollRef,
     rowVirtualizer,
     rowHeight: MARKET_ROW_HEIGHT,
+    onRowActivate,
   })
 
   const virtualItems = rowVirtualizer.getVirtualItems()
@@ -161,6 +168,9 @@ export function MarketGrid({ symbols, emptyKind, className }: MarketGridProps) {
                     keyboard.setFocusedIndex(virtualRow.index)
                   }}
                   onKeyDown={keyboard.handleRowKeyDown}
+                  onActivate={() => {
+                    onRowActivate?.(symbol)
+                  }}
                   style={{
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
