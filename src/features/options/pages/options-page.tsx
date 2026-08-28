@@ -1,6 +1,6 @@
 import { Button } from "@/components/primitives/button";
 import { Skeleton } from "@/components/primitives/skeleton";
-import { DataTable } from "@/components/patterns/data-table";
+import { DataTableVirtualized } from "@/components/patterns/data-table-virtualized";
 import { optionsColumns } from "@/features/options/columns";
 import { useOptionsSnapshot } from "@/features/options/hooks/use-options-snapshot";
 import { getUserFacingErrorMessage } from "@/lib/http/errors";
@@ -40,7 +40,7 @@ export function OptionsPage() {
             </Button>
           </div>
         ) : (
-          <DataTable columns={optionsColumns} data={data ?? []} />
+          <DataTableVirtualized columns={optionsColumns} data={data ?? []} />
         )}
       </div>
     </section>
