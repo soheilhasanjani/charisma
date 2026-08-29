@@ -56,9 +56,12 @@ export function createMarketController(deps: MarketControllerDeps) {
    */
   let transportStatus: FeedTransportStatus = INITIAL_TRANSPORT
 
-  function markSymbolDirty(symbol: string) {
+  /**
+   * Writes already dirty the entity store via `set`. This only tells the
+   * scheduler when to flush those keys.
+   */
+  function scheduleSymbol(symbol: string) {
     deps.scheduler.markDirty(symbol)
-    deps.symbolStore.markDirty(symbol)
   }
 
   /**
@@ -158,12 +161,12 @@ export function createMarketController(deps: MarketControllerDeps) {
             bid: message.bid,
             ask: message.ask,
           })
-          markSymbolDirty(message.symbol)
+          scheduleSymbol(message.symbol)
           break
 
         case 'greeks':
           deps.symbolStore.applyGreeks(message.symbol, message)
-          markSymbolDirty(message.symbol)
+          scheduleSymbol(message.symbol)
           break
 
         case 'trade': {
@@ -206,7 +209,7 @@ export function createMarketController(deps: MarketControllerDeps) {
         const current = deps.symbolStore.get(row.symbol)
         const next = reconcileSnapshotRow(current, row)
         deps.symbolStore.setRecord(row.symbol, next)
-        markSymbolDirty(row.symbol)
+        scheduleSymbol(row.symbol)
       }
 
       deps.knownSymbolsStore.setState({

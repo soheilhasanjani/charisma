@@ -52,6 +52,8 @@ export function createFrameScheduler(
 
   function partitionKeys(source: Set<string>) {
     const visible = options.getVisibleKeys?.()
+    // Empty means "viewport not measured yet", not "nothing on screen".
+    // Treating it as all-primary avoids a first-paint stall; do not invert.
     if (!visible || visible.size === 0) {
       return { primary: source, deferred: new Set<string>() }
     }

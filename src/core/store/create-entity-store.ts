@@ -8,6 +8,7 @@ export type EntityStoreListener = () => void
 export interface EntityStore<K, V> {
   get(key: K): V | undefined
   set(key: K, value: V): void
+  /** Dirties without writing. `set` already dirties; this re-notifies the current value. */
   markDirty(key: K): void
   flush(): ReadonlySet<K>
   flushKey(key: K): void

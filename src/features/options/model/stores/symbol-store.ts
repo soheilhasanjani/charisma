@@ -29,10 +29,6 @@ export function createSymbolStore() {
       store.set(symbol, record)
     },
 
-    markDirty(symbol: string) {
-      store.markDirty(symbol)
-    },
-
     flushKey(symbol: string) {
       store.flushKey(symbol)
     },

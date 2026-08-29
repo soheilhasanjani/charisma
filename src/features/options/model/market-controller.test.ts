@@ -129,3 +129,28 @@ describe('subscription reconciliation', () => {
     ])
   })
 })
+
+describe('tick writes', () => {
+  it('notifies a subscriber on flush from set() alone, without a second store.markDirty', () => {
+    const heard: string[] = []
+    const symbol = 'AAPL_20250117_190_C'
+    const { controller, scheduler, stores } = createTestMarket({
+      onFlush(keys) {
+        stores.symbol.flushKeys(keys)
+      },
+    })
+
+    stores.symbol.subscribe(symbol, () => heard.push(symbol))
+    controller.handleMessage({
+      type: 'ticker',
+      symbol,
+      last: 10,
+      bid: 9.9,
+      ask: 10.1,
+    })
+
+    expect(heard).toEqual([])
+    scheduler.flushNow()
+    expect(heard).toEqual([symbol])
+  })
+})
