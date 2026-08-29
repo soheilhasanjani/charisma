@@ -1,181 +1,88 @@
-# تسک مصاحبه فرانت‌اند — بازار آپشن (Real-Time Options)
+# Real-Time Options Terminal
 
-در این تسک شما باید یک رابط کاربری فرانت‌اند بسازید که اطلاعات نمادهای بازار آپشن را از طریق **API** و **WebSocket** دریافت کرده و به صورت زنده (Real-Time) نمایش دهد.
+A Persian-language options market terminal: a virtualized grid of option contracts
+updating live over WebSocket, with a risk score recomputed client-side on every
+message.
 
-این پروژه با هدف ارزیابی توانایی شما در مدیریت استیت‌های پیچیده، هندل کردن دیتای فرکانس بالا (High-Frequency) و تصمیم‌گیری‌های معماری در مقیاس بزرگ طراحی شده است.
+Built for the frontend interview task in [docs/TASK.md](./docs/TASK.md).
 
----
+## Quick start
 
-## ۱. دریافت اسنپ‌شات اولیه بازار
-
-با فراخوانی API زیر، اطلاعات اولیه تمام نمادها را دریافت کنید:
-
-```
-GET /api/options/snapshot
-```
-
-اطلاعات را دریافت کنید و در یک جدول شامل ستون‌های زیر نمایش دهید:
-
-- **نماد (symbol)**
-- **آخرین قیمت (last)**
-- **قیمت عرضه (bid)**
-- **قیمت تقاضا (ask)**
-- **امتیاز ریسک (Risk Score)** _(توضیحات در بخش ۴)_
-
-> **توجه:** زبان رابط کاربری فارسی است؛ تمامی عناوین و متون باید به زبان فارسی نمایش داده شوند.
-
----
-
-## ۲. نمایش اطلاعات تکمیلی و فیلترها
-
-### نمایش اطلاعات تکمیلی
-
-با کلیک روی هر ردیف جدول، اطلاعات زیر باید نمایش داده شود:
-
-- delta (دلتا)
-- gamma (گاما)
-- theta (تتا)
-- vega (وگا)
-
-نوع نمایش (Modal یا Expand) به انتخاب شماست.
-
-### فیلتر چند انتخابی
-
-در بالای جدول یک **کامپوننت Select چند انتخابی** قرار دهید که:
-
-- در ابتدا همه نمادها را نمایش دهد
-- امکان multi-select داشته باشد
-- فیلتر فقط سمت فرانت اعمال شود
-
----
-
-## ۳. اتصال وب‌سوکت و آپدیت لحظه‌ای
-
-به آدرس زیر متصل شوید:
-
-```
-ws://localhost/ws/options
+```bash
+npm install
+npm run dev          # http://localhost:5173
 ```
 
-وب‌سوکت پیام‌های زیر را ارسال می‌کند:
+The API and WebSocket feed are mocked with MSW in development, so there is no
+backend to run.
 
-#### ticker (تغییرات قیمت — برای آپدیت جدول)
+## Features
 
-```ts
-{
-  type: 'ticker',
-  symbol: string,
-  last: number,
-  bid: number, // قیمت عرضه (bid)
-  ask: number, // قیمت تقاضا (ask)
-}
-```
+- **Live grid** — symbol, strike, type, expiry, last, bid, ask, spread, trade side
+  and risk score, updating in place. Only rows whose symbol changed re-render.
+- **Client-side risk engine** — the supplied `calculateRiskScore` runs in a Web
+  Worker, scoped to the visible window so a 500-iteration trig loop never blocks a
+  frame.
+- **Multi-select symbol filter** — searchable, grouped by underlying, virtualized to
+  stay smooth at thousands of options, and mirrored to the URL so a filtered view is
+  shareable. Narrowing the filter sends a `subscribe` message to limit the feed.
+- **Row detail** — click a row or press Enter for live delta, gamma, theta and vega,
+  the risk score broken into its components, a price sparkline, and recent trades.
+- **Last trade banner** — the newest trade, throttled for readability, with a pause
+  control.
+- **Connection status** — derived from three signals (our transport state, the
+  server's reported status, and time since the last message) rather than trusting
+  `readyState`, so a socket that goes quiet is reported instead of shown as healthy.
+- **Persian and English** with runtime RTL/LTR switching, and dark/light themes.
+- **Accessibility** — real `role="grid"` semantics with full aria indexing, keyboard
+  navigation, per-column help tooltips, and `prefers-reduced-motion` respected.
 
-#### greeks (مقادیر یونانی — اطلاعات تکمیلی)
+## Scripts
 
-```ts
-{
-  type: 'greeks',
-  symbol: string,
-  delta: number, // دلتا (delta)
-  gamma: number, // گاما (gamma)
-  theta: number, // تتا (theta)
-  vega: number,  // وگا (vega)
-}
-```
+| Script            | What it does                                                         |
+| ----------------- | -------------------------------------------------------------------- |
+| `npm run dev`     | Dev server with mock API and WebSocket                               |
+| `npm run verify`  | typecheck, lint, format, knip, tests, build, dev-code-excluded check |
+| `npm run test`    | Unit and integration tests                                           |
+| `npm run bench`   | CPU benchmarks behind the architecture claims                        |
+| `npm run analyze` | Build with the bundle visualizer (`stats.html`)                      |
+| `npm run budget`  | Fail if the gzipped bundle regresses                                 |
+| `npm run knip`    | Report unused files, exports and dependencies                        |
 
-#### trade (معامله — برای نمایش آخرین معامله)
+## Dev tools
 
-```ts
-{
-  type: 'trade',
-  symbol: string,
-  price: number,
-  size: number,
-  side: 'buy' | 'sell', // نوع معامله: خرید (buy) یا فروش (sell)
-  time: string,
-}
-```
+Both are dev-only and verified absent from the production bundle.
 
-> نمایش آخرین trade: «آخرین معامله» باید همیشه در **بالای صفحه** به عنوان آخرین اکشن بازار نمایش داده شود و در هر لحظه فقط آخرین معاملهٔ رسیده نمایش داده شود.
+- `?perf=1` — performance HUD (messages/s, conflation ratio, flushes/s, FPS, long
+  tasks, worker latency, row renders) plus a load generator that synthesizes 5000
+  symbols at up to 5000 messages/second. The mock feed sends roughly one message
+  every 1.2 s, so this is how the scale claims are actually exercised.
+- `?scan=1` — React Scan overlays. A single tick should light up one row while the
+  header, filter and banner stay dark.
+- `?risk=all` — switch risk computation from the viewport to the whole book, to see
+  the difference the scoping makes.
 
-#### status (وضعیت اتصال)
+## Architecture
 
-```ts
-{
-  type: 'status',
-  status: 'slow' | 'connected' | 'disconnected' // نمایش به صورت: کند (slow)، متصل (connected)، قطع (disconnected)
-}
-```
+The short version: tick data never enters React state. Messages mutate a `Map` and
+mark keys dirty; one `requestAnimationFrame` loop notifies only the listeners of
+dirty keys; each row subscribes to its own symbol. Cost per message is O(1) in rows
+rather than O(rows).
 
-استاتوس باید بالای صفحه سمت چپ نمایش داده شود.
+Full write-up, with measured numbers and the questions raised by 5000×5000:
 
-### محدود کردن trade
+- [ARCHITECTURE.md](./ARCHITECTURE.md) (Persian)
+- [ARCHITECTURE.en.md](./ARCHITECTURE.en.md) (English)
+- [docs/adr/](./docs/adr/) — decision records, each with its rejected alternatives
+- [docs/perf-measurements.md](./docs/perf-measurements.md) — benchmark results
 
-در صورت فیلتر شدن نمادها می‌توانید پیام زیر را برای محدود کردن trade ارسال کنید:
+## Stack
 
-```ts
-{
-  type: 'subscribe',
-  symbols: string[]
-}
-```
+React 19, TypeScript, Vite 7, Tailwind v4, Base UI, TanStack Query, TanStack
+Virtual, zustand, i18next, MSW, Vitest.
 
-(این فیلتر روی greeks تأثیری ندارد — فقط دریافت trade را محدود می‌کند.)
+## Contributing
 
-> **محدودسازی:** در صورت فیلتر شدن نمادها، باید پیامی با تایپ `subscribe` حاوی آرایه نمادهای انتخاب شده به وب‌سوکت ارسال کنید تا دریافت دیتا محدود شود.
-
----
-
-## ۴. موتور محاسبه ریسک (ویژگی پردازش سنگین)
-
-برنامه شما باید به عنوان یک موتور ریسکِ سمت کلاینت عمل کند. ستون **Risk Score** باید روی هر پیام وب‌سوکت برای نماد مربوطه مجدداً محاسبه و آپدیت شود.
-
-کد محاسبه این فرمول در فایل `src/utils/risk-calculator.ts` قرار داده شده است. شما باید این فایل را به پروژه خود اضافه کرده و خروجی آن را به صورت زنده در جدول رندر کنید.
-
----
-
-## ۵. بخش ویژه معماری و مقیاس‌پذیری (Architecture & Scalability)
-
-علاوه بر پیاده‌سازی کد، ما به **نحوه تفکر** شما اهمیت می‌دهیم. لطفاً یک فایل `ARCHITECTURE.md` در روت پروژه ایجاد کرده و به موارد زیر پاسخ دهید:
-
-1. **مستندات تصمیم‌گیری (ADR):** به دقت توضیح دهید چرا این استک و لایبرری‌ها (مدیریت استیت، مدیریت اتصال وب‌سوکت، رندرینگ) را انتخاب کردید؟ مدل فکری شما برای این انتخاب‌ها چه بوده است؟
-2. **طراحی برای Scale:** فرض کنید تعداد نمادها به ۵۰۰۰ برسد و ثانیه‌ای ۵۰۰۰ پیام وب‌سوکت دریافت کنید. چه سوالات و چالش‌هایی برای پیاده‌سازی این مقیاس در ذهن شما ایجاد می‌شود؟
-3. **مدیریت گلوگاه‌ها:** معماری فعلی شما در برابر فرمول محاسباتی `riskCalculator` و رندرهای پیاپی چه گلوگاه‌هایی (Bottlenecks) دارد و راهکار شما برای حفظ پرفورمنس مرورگر چیست؟
-
----
-
-## 📌 نکات مهم
-
-استفاده از هر کتابخانه‌ای آزاد است.
-
-مهم‌ترین موارد:
-
-- معماری و ساختار صحیح
-- مدیریت درست WebSocket
-- پرفورمنس مناسب
-- مدیریت state تمیز و بهینه
-- جلوگیری از رندرهای اضافه (Re-renders)
-
-### 🎯 خروجی نهایی باید شامل موارد زیر باشد
-
-- جدول نمادها با آپدیت real-time
-- فیلتر multi-select
-- نمایش اطلاعات تکمیلی هر نماد
-- نمایش آخرین معامله در بالای صفحه
-- نمایش وضعیت اتصال
-- ستون Risk Score با محاسبه زنده سمت کلاینت
-- فایل `ARCHITECTURE.md`
-- کد خوانا و ساختارمند
-
----
-
-شما برای انجام این پروژه **۲ روز** زمان دارید.
-
-لطفاً لینک ریپازیتوری گیت‌هاب پروژه نهایی خود را در پاسخ به ایمیل ارسال نمایید.
-
-پیاده‌سازی تم دارک/لایت و یا دو زبانه بودن امتیاز مثبت دارد.
-
-نوشتن یونیت تست امتیاز مثبت دارد.
-
-موفق باشید!
+[CONTRIBUTING.md](./CONTRIBUTING.md) has a thirty-minute reading tour of the six
+files that matter, plus recipes for adding a column, a message type, a store or a
+locale.

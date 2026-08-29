@@ -14,6 +14,11 @@ const VIEWPORT_WIDTH = 1200
  * integration tests.
  */
 function stubLayout() {
+  // Benchmarks run in the node environment, where there is nothing to stub.
+  if (typeof Element === 'undefined') {
+    return
+  }
+
   if (!('ResizeObserver' in globalThis)) {
     globalThis.ResizeObserver = class {
       observe() {}

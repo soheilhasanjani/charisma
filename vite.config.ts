@@ -36,6 +36,11 @@ export default defineConfig(({ mode }) => ({
           ) {
             return 'vendor-react'
           }
+          // Measured both ways: splitting Base UI out or letting it fall into
+          // the entry chunk gives the same eager total (~196 KiB gzip), because
+          // most of what the lazy panel and dialog use is shared anyway. Keeping
+          // the vendor chunk means an app-code change invalidates ~65 KiB
+          // instead of ~126 KiB for returning visitors.
           if (id.includes('node_modules/@base-ui')) {
             return 'vendor-base-ui'
           }

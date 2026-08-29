@@ -16,6 +16,20 @@ const baselinePath = path.join(root, 'docs/bundle-baseline.json')
 const REGRESSION_RATIO = 0.05
 const REGRESSION_FLOOR_BYTES = 1024
 
+/**
+ * Strips Vite's 8-character content hash so a chunk keeps the same identity
+ * across builds. Keying on the hashed filename would report every chunk as new
+ * the moment its contents changed, which is exactly when the check needs to be
+ * meaningful.
+ *
+ * The length is pinned at 8 rather than "8 or more" because hashes may contain
+ * `-`, so a greedy match eats real name segments and collapses `vendor-react`
+ * and `vendor-base-ui` into one key.
+ */
+function stableChunkName(file) {
+  return file.replace(/-[A-Za-z0-9_-]{8}(?=\.[a-z]+$)/, '')
+}
+
 async function measureAssets() {
   const files = (await readdir(distAssets)).filter((file) =>
     /\.(js|css)$/.test(file),
@@ -28,7 +42,10 @@ async function measureAssets() {
     const filePath = path.join(distAssets, file)
     const buffer = await readFile(filePath)
     const gzip = gzipSync(buffer).length
-    chunks[file] = gzip
+    const name = stableChunkName(file)
+    // Sum on collision rather than overwrite, so two chunks sharing a stable
+    // name can never hide one of them from the budget.
+    chunks[name] = (chunks[name] ?? 0) + gzip
     total += gzip
   }
 

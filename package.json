@@ -14,11 +14,12 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "bench": "vitest bench --run",
     "analyze": "vite build --mode analyze",
     "budget": "node scripts/check-bundle-budget.mjs",
     "budget:update": "npm run build && node scripts/check-bundle-budget.mjs --update",
     "measure:libs": "node scripts/measure-libs.mjs",
-    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run knip && npm run test && npm run build && npm run check:dev-excluded",
+    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run knip && npm run test && npm run build && npm run check:dev-excluded && npm run budget",
     "check:dev-excluded": "node scripts/check-dev-excluded-from-prod.mjs",
     "prepare": "husky",
     "preview": "vite preview"

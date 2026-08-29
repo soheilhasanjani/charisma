@@ -1,19 +1,14 @@
 {
-  "measuredAt": "2026-08-28T23:06:31.906Z",
-  "totalGzipBytes": 175600,
+  "measuredAt": "2026-08-29T00:34:43.897Z",
+  "totalGzipBytes": 202241,
   "chunks": {
-    "index-0ahQPG7P.css": 8825,
-    "index-BBVrBLzG.js": 98,
-    "index-CnIB7wyK.js": 61754,
-    "vendor-base-ui-BGzdbbBe.js": 44405,
-    "vendor-react-DgBYbIvo.js": 60518
-  },
-  "libraryMeasurements": {
-    "@tanstack/react-table": {
-      "gzipBytes": 13201,
-      "gzipKiB": 12.9,
-      "budgetKiB": 8,
-      "withinBudget": false
-    }
+    "index.js": 65047,
+    "index.css": 9820,
+    "locale-en.js": 1364,
+    "risk.worker.js": 515,
+    "symbol-detail-dialog.js": 2271,
+    "symbol-filter-panel.js": 1335,
+    "vendor-base-ui.js": 61371,
+    "vendor-react.js": 60518
   }
 }

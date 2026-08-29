@@ -17,5 +17,9 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     passWithNoTests: true,
+    benchmark: {
+      // Node, and without the jsdom setup, so numbers reflect raw CPU cost.
+      include: ['src/**/*.bench.ts'],
+    },
   },
 })
