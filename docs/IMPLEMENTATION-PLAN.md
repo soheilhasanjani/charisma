@@ -48,7 +48,7 @@ Two structural problems to fix rather than build on:
 
 ## Hard constraints
 
-`src/mocks/**` and `src/utils/risk-calculator.ts` are treated as vendor files and **never edited**. The worker imports `calculateRiskScore` as-is; the load generator injects synthetic messages into the ingest pipeline _below_ the socket rather than touching the mock. A contract test pins the calculator's known outputs so an accidental edit fails CI.
+`src/mocks/**` and `src/utils/risk-calculator.ts` are treated as vendor files and **never edited**. The worker imports `calculateRiskScore` as-is; the load generator injects synthetic messages into the ingest pipeline _below_ the socket rather than touching the mock. A contract test pins the calculator's known outputs so an accidental edit fails the tests.
 
 ## Target architecture
 
@@ -244,7 +244,7 @@ Each phase ends in a working, committable state. Test _infrastructure_ lands in 
 
 ## Phase 0 — Foundation and guardrails
 
-Prettier with the tailwind class-sorting plugin; type-aware ESLint adding `jsx-a11y`, import ordering, and the `no-restricted-imports` boundary rules; husky + lint-staged + commitlint; Vitest + Testing Library config and `src/test/setup.ts`; `npm run verify` (typecheck, lint, test, build) wired identically into CI; `rollup-plugin-visualizer` behind `npm run analyze` plus a gzip budget script that fails CI on regression.
+Prettier with the tailwind class-sorting plugin; type-aware ESLint adding `jsx-a11y`, import ordering, and the `no-restricted-imports` boundary rules; Vitest + Testing Library config and `src/test/setup.ts`; `npm run verify` (typecheck, lint, test, build); `rollup-plugin-visualizer` behind `npm run analyze` plus a gzip budget script that fails on regression.
 
 **React Scan** joins here as a devDependency, since render behaviour needs watching from the first component onward. Preference is the official `@react-scan/vite-plugin-react-scan`; its published peer range currently tops out at Vite 6 while this project is on Vite 7, so if the peer doesn't resolve cleanly the fallback is a dynamic `import('react-scan')` in the dev bootstrap before `createRoot`, gated behind `?scan=1`. A static top-level import is avoided either way: it has a track record of breaking Vite HMR, and gating keeps it out of the production bundle entirely.
 
@@ -253,9 +253,8 @@ _Exit criteria:_ `npm run verify` passes on the untouched codebase, React Scan o
 **Done (Phase 0):**
 
 - Prettier + `prettier-plugin-tailwindcss`; type-aware ESLint with `jsx-a11y`, `simple-import-sort`, and `no-restricted-imports` boundary rules for `core/`, feature slices, and components.
-- Husky pre-commit (`lint-staged`) + commit-msg (`commitlint` conventional).
 - Vitest + Testing Library + `src/test/setup.ts`; smoke test in `src/lib/utils.test.ts`.
-- `npm run verify` = typecheck → lint → format:check → test → build; mirrored in `.github/workflows/verify.yml`.
+- `npm run verify` = typecheck → lint → format:check → test → build.
 - `npm run analyze` (rollup visualizer → `stats.html`); `npm run budget` / `budget:update` against `docs/bundle-baseline.json`; `npm run measure:libs` for dependency sizing.
 - React Scan via dynamic `import('react-scan')` in `main.tsx`, gated on `?scan=1` (Vite 7 — no vite plugin).
 
@@ -374,7 +373,7 @@ _Exit criteria:_ no hardcoded UI strings remain, both locales render correctly w
 
 ## Phase 7 — Performance proof
 
-`src/dev/load-generator.ts` synthesizes 5000 symbols and injects decoded messages at a configurable rate up to 5000/s directly into `MarketController` — below the socket, so `src/mocks/` stays untouched. `src/dev/perf-hud.tsx` reports messages/s, conflation ratio, flushes/s, FPS, long-task count, worker round-trip latency and per-row render counts. React Scan captures provide the visual counterpart: a tick highlighting one row while the header, filter and banner stay dark. Both tools are dev-only and a CI assertion verifies they are absent from the production bundle.
+`src/dev/load-generator.ts` synthesizes 5000 symbols and injects decoded messages at a configurable rate up to 5000/s directly into `MarketController` — below the socket, so `src/mocks/` stays untouched. `src/dev/perf-hud.tsx` reports messages/s, conflation ratio, flushes/s, FPS, long-task count, worker round-trip latency and per-row render counts. React Scan captures provide the visual counterpart: a tick highlighting one row while the header, filter and banner stay dark. Both tools are dev-only and `npm run check:dev-excluded` verifies they are absent from the production bundle.
 
 _Exit criteria:_ recorded numbers at 30, 500 and 5000 msg/s in both risk compute modes, plus React Scan evidence — the material Phase 8 quotes.
 
@@ -384,7 +383,7 @@ _Exit criteria:_ recorded numbers at 30, 500 and 5000 msg/s in both risk compute
 - **`src/dev/perf-hud.tsx` + `perf-overlay.tsx`** — HUD reports msg/s, conflation ratio, flushes/s, FPS, long-task count, worker RTT, and per-row render counts; toggles risk `viewport | all`.
 - **`src/features/options/lib/render-instrumentation.ts`** — lightweight row render counter wired from `MarketRow` in DEV.
 - **`?perf=1`** — lazy-loaded via `dev-perf-gate`; stops live socket and seeds synthetic snapshot.
-- **`scripts/check-dev-excluded-from-prod.mjs`** — CI assertion that dev tooling is absent from the production bundle (`npm run check:dev-excluded`).
+- **`scripts/check-dev-excluded-from-prod.mjs`** — assertion that dev tooling is absent from the production bundle (`npm run check:dev-excluded`).
 - **`docs/perf-measurements.md`** — measurement protocol and results table for Phase 8.
 
 ## Phase 8 — Docs and handover kit
@@ -403,9 +402,9 @@ Pick the model by _failure cost_ — subtle concurrency bugs and perf regression
 
 | Phase / task                         | Recommended model                                  | Why                                                                                                      |
 | ------------------------------------ | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| **Phase 0** — tooling & CI           | **Composer 2.5 Fast**                              | Config files, scripts, and hook wiring are well-trodden; speed beats depth.                              |
+| **Phase 0** — tooling                | **Composer 2.5 Fast**                              | Config files and scripts are well-trodden; speed beats depth.                                            |
 | Phase 0 — ESLint boundary rules      | **GPT-5.3 Codex**                                  | `no-restricted-imports` patterns and type-aware flat config are easy to get subtly wrong.                |
-| Phase 0 — bundle budget script       | **GPT-5.3 Codex**                                  | Regression math and CI integration need careful edge-case handling.                                      |
+| Phase 0 — bundle budget script       | **GPT-5.3 Codex**                                  | Regression math and verify-script integration need careful edge-case handling.                           |
 | **Phase 1** — store + scheduler      | **Claude Sonnet 5 Thinking (High)**                | Dirty-set pub/sub and rAF conflation have non-obvious invariants; bugs are silent.                       |
 | **Phase 1** — socket resilience      | **Claude Opus 5 Thinking (XHigh)**                 | Backoff-reset-on-data, watchdog vs transport state, StrictMode teardown — classic production foot-guns.  |
 | **Phase 2** — snapshot/live race     | **GPT-5.3 Codex**                                  | Per-field revision stamps and fill-not-clobber logic need precise, testable implementation.              |
@@ -426,7 +425,7 @@ Pick the model by _failure cost_ — subtle concurrency bugs and perf regression
 ## Handover kit
 
 - **`CONTRIBUTING.md`** opens with a 30-minute reading tour: six files in order, one line each on what they own. Then copy-paste recipes for the tasks a newcomer will actually face — add a grid column (including its description tooltip), add a WebSocket message type, add a live-data store, add a locale, add a formatter — each three or four steps pointing at real files. The uniform store shape is what keeps those recipes short.
-- **`npm run verify`** runs typecheck, lint, tests and build in one command. One script to remember before pushing, and CI runs the same one.
+- **`npm run verify`** runs typecheck, lint, tests and build in one command. One script to remember before pushing.
 - **Boundaries the linter defends.** `no-restricted-imports` stops `core/` importing React or `features/`, stops feature slices cross-importing, and stops components importing the socket directly. Architecture that only lives in a document decays; this one fails the build.
 - **One source of truth for the wire format.** `src/core/realtime/protocol.ts` holds types and decoders together, so a protocol change has exactly one edit site and the compiler finds every consequence.
 - **Tuning constants in one place.** Backoff base and cap, staleness thresholds, hidden-tab grace period, throttle intervals and ring-buffer capacities all live in a single config module with comments explaining what each was derived from — so the next engineer tunes values instead of hunting for magic numbers.

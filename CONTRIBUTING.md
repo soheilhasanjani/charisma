@@ -15,8 +15,6 @@ Before pushing, run one command:
 npm run verify       # typecheck, lint, format, knip, tests, build, dev-code-excluded check
 ```
 
-CI runs exactly that, so if it passes locally it passes there.
-
 ## The thirty-minute tour
 
 Read these six files in this order and you will understand the whole system. Total
@@ -142,12 +140,11 @@ Name tests as behaviour: "expires a stale server claim once newer data arrives",
 
 `src/mocks/**` and [src/utils/risk-calculator.ts](./src/utils/risk-calculator.ts) are
 supplied fixtures and are treated as vendor files. `contract.test.ts` pins the
-calculator's outputs, so an accidental edit fails CI. If the mock's behaviour is
+calculator's outputs, so an accidental edit fails the tests. If the mock's behaviour is
 inconvenient, work around it in our code and document why — the quirks it exposes
 are listed in ARCHITECTURE.md.
 
 ## Commits
 
-Conventional commits, enforced by commitlint. Keep them small enough that `git log`
-reads as an explanation of how the project was built. Say why in the body, not just
-what.
+Keep commits small enough that `git log` reads as an explanation of how the
+project was built. Say why in the body, not just what.

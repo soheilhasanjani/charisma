@@ -21,7 +21,6 @@
     "measure:libs": "node scripts/measure-libs.mjs",
     "verify": "npm run typecheck && npm run lint && npm run format:check && npm run knip && npm run test && npm run build && npm run check:dev-excluded && npm run budget",
     "check:dev-excluded": "node scripts/check-dev-excluded-from-prod.mjs",
-    "prepare": "husky",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -40,8 +39,6 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@commitlint/cli": "^21.2.2",
-    "@commitlint/config-conventional": "^21.2.2",
     "@eslint/js": "^9.39.1",
     "@fontsource-variable/vazirmatn": "^5.3.0",
     "@tailwindcss/vite": "^4.3.3",
@@ -58,10 +55,8 @@
     "eslint-plugin-react-refresh": "^0.4.24",
     "eslint-plugin-simple-import-sort": "^14.0.0",
     "globals": "^16.5.0",
-    "husky": "^9.1.7",
     "jsdom": "^29.1.1",
     "knip": "^6.33.0",
-    "lint-staged": "^17.4.1",
     "msw": "^2.12.4",
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.8.1",
