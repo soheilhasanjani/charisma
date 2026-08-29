@@ -23,19 +23,7 @@ const fa = {
   columns: {
     ticker: {
       header: 'نماد',
-      description: 'نماد پایه قرارداد آپشن.',
-    },
-    strike: {
-      header: 'قیمت اعمال',
-      description: 'قیمت اعمال قرارداد آپشن.',
-    },
-    type: {
-      header: 'نوع',
-      description: 'Call یا Put.',
-    },
-    expiry: {
-      header: 'سررسید',
-      description: 'تاریخ سررسید قرارداد.',
+      description: 'نماد قرارداد آپشن.',
     },
     last: {
       header: 'آخرین قیمت',
@@ -48,14 +36,6 @@ const fa = {
     ask: {
       header: 'قیمت تقاضا',
       description: 'بهترین قیمت فروش در دفتر سفارش.',
-    },
-    spread: {
-      header: 'اسپرد',
-      description: 'اختلاف قیمت تقاضا و عرضه (ask − bid).',
-    },
-    lastTradeSide: {
-      header: 'سمت معامله',
-      description: 'سمت آخرین معامله ثبت‌شده برای نماد.',
     },
     riskScore: {
       header: 'امتیاز ریسک',
@@ -99,10 +79,6 @@ const fa = {
     sideBuyLabel: 'Buy',
     sideSellLabel: 'Sell',
     liveAnnouncement: 'معامله {{side}} {{symbol}} به قیمت {{price}}',
-  },
-  optionType: {
-    call: 'Call',
-    put: 'Put',
   },
   detail: {
     description: 'دلتا، گاما، تتا و وگا',

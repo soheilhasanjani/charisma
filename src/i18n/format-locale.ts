@@ -7,11 +7,6 @@ const FORMAT_LOCALE_BY_APP: Record<AppLocale, string> = {
   en: 'en-US',
 }
 
-const DATE_LOCALE_BY_APP: Record<AppLocale, string> = {
-  fa: 'fa-IR',
-  en: 'en-US',
-}
-
 export function setActiveFormatLocale(locale: AppLocale) {
   activeFormatLocale = FORMAT_LOCALE_BY_APP[locale]
   priceFormatters.clear()
@@ -19,10 +14,6 @@ export function setActiveFormatLocale(locale: AppLocale) {
 
 export function getActiveFormatLocale() {
   return activeFormatLocale
-}
-
-export function getActiveDateLocale(locale: AppLocale) {
-  return DATE_LOCALE_BY_APP[locale]
 }
 
 const priceFormatters = new Map<string, Intl.NumberFormat>()

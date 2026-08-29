@@ -162,11 +162,6 @@ export function createMarketController(deps: MarketControllerDeps) {
 
         case 'trade': {
           const receivedAt = Date.now()
-          deps.symbolStore.upsert(message.symbol, (record) => ({
-            ...record,
-            lastTradeSide: message.side,
-          }))
-          markSymbolDirty(message.symbol)
 
           if (receivedAt - lastTradePublishedAt >= LAST_TRADE_THROTTLE_MS) {
             lastTradePublishedAt = receivedAt

@@ -25,19 +25,7 @@ const en = {
   columns: {
     ticker: {
       header: 'Symbol',
-      description: 'Underlying ticker for the option contract.',
-    },
-    strike: {
-      header: 'Strike',
-      description: 'Strike price of the option contract.',
-    },
-    type: {
-      header: 'Type',
-      description: 'Call or Put.',
-    },
-    expiry: {
-      header: 'Expiry',
-      description: 'Contract expiration date.',
+      description: 'Option contract symbol.',
     },
     last: {
       header: 'Last',
@@ -50,14 +38,6 @@ const en = {
     ask: {
       header: 'Ask',
       description: 'Best ask in the order book.',
-    },
-    spread: {
-      header: 'Spread',
-      description: 'Ask minus bid.',
-    },
-    lastTradeSide: {
-      header: 'Last side',
-      description: 'Side of the most recent trade.',
     },
     riskScore: {
       header: 'Risk score',
@@ -101,10 +81,6 @@ const en = {
     sideBuyLabel: 'Buy',
     sideSellLabel: 'Sell',
     liveAnnouncement: '{{side}} trade {{symbol}} at {{price}}',
-  },
-  optionType: {
-    call: 'Call',
-    put: 'Put',
   },
   detail: {
     description: 'Delta, gamma, theta and vega',

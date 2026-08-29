@@ -76,7 +76,6 @@ per-key notification.
    it without further work.
 3. Add a `case` to `MarketCellContent` in
    [market-row.tsx](./src/features/options/components/market-row.tsx).
-4. Bump `aria-colcount` in [market-grid.tsx](./src/features/options/components/market-grid.tsx).
 
 ### Add a WebSocket message type
 

@@ -208,7 +208,7 @@ Reading `src/mocks/ws-handlers.ts` surfaces five things the brief doesn't mentio
 - The server emits `{ type: 'subscribed', symbols }` as an ack, undocumented in the brief. It is decoded and used to reconcile intended against confirmed subscriptions.
 - It emits `status: 'disconnected'` at random _while the socket is open_. This is exactly why `FeedStatusStore` derives state from three inputs and records which one is authoritative; a server claiming disconnection while data keeps arriving is a disagreement worth showing rather than blindly trusting.
 - `subscribe` with an empty or fully-invalid array falls back to **all** symbols server-side, and gates `ticker`/`greeks` too, not just `trade` as the brief claims. The client never drops rows on unsubscribe; it retains last-known values and marks them stale.
-- `trade.time` is produced by `new Date().toLocaleTimeString()` — a locale-formatted string, not ISO 8601. `Date.parse` cannot reliably read it, so `src/lib/format-date.ts` must never be pointed at it. It is treated as an opaque display string, and the client's own receipt timestamp is what any ordering or staleness logic uses.
+- `trade.time` is produced by `new Date().toLocaleTimeString()` — a locale-formatted string, not ISO 8601. `Date.parse` cannot reliably read it. It is treated as an opaque display string, and the client's own receipt timestamp is what any ordering or staleness logic uses.
 - Real throughput is ~0.83 msg/s. Scale claims are unfalsifiable against this feed, which is exactly why Phase 7 exists.
 
 ## Correctness and UX details that are easy to get wrong
@@ -326,7 +326,7 @@ _Exit criteria:_ risk scores land in the stores within one frame of a tick, the 
 
 **4a. Grid.** Divs with `role="grid"/"row"/"columnheader"/"gridcell"` and full aria indexing; one `gridTemplateColumns` CSS variable shared by header and body so alignment cannot drift; sticky header and sticky symbol column; `MarketRow` takes only a symbol and an offset and subscribes via `useSyncExternalStore`; memoized cells; price flash honouring `prefers-reduced-motion`. React Scan is the acceptance tool here: a tick must repaint one row and nothing else.
 
-**4b. Columns and header help.** The column model gains Risk Score, spread and last-trade side, with `meta` carrying width, alignment and a **description key**. Every header renders its label plus a question-mark icon that opens `src/components/primitives/tooltip.tsx` with that column's description — the Risk Score one explaining the formula's three components. The icon is a real button with an `aria-label`, associated by `aria-describedby`. Descriptions are i18n keys from the start, filled in Phase 6. `format-option-symbol` splits into a cached pure parser (module-level `Map`; the symbol set is finite and immutable) plus separate cell renderers, so each symbol parses once instead of four times per row per render.
+**4b. Columns and header help.** The column model is the five fields from the brief (symbol, last, bid, ask, risk score), with width, alignment and a **description key**. Every header renders its label plus a question-mark icon that opens `src/components/primitives/tooltip.tsx` with that column's description — the Risk Score one explaining the formula's three components. The icon is a real button with an `aria-label`, associated by `aria-describedby`. Descriptions are i18n keys from the start, filled in Phase 6.
 
 Numeric cells carry `dir="ltr"` with tabular figures, layout uses logical properties throughout, and the two empty states get distinct copy and recovery affordances.
 
@@ -335,7 +335,7 @@ _Exit criteria:_ live-updating rows with a Risk Score column, every header expla
 **Done (Phase 4):**
 
 - **4a:** Purpose-built `role="grid"` layout (`market-grid.tsx`, `market-row.tsx`) with shared `--market-grid-columns`, sticky header + sticky symbol column, per-row `useSyncExternalStore` via `useSymbolRecord`, price flash with `prefers-reduced-motion` (`motion-safe:` + CSS keyframes), viewport symbols wired to `runtime.setViewportSymbols()`.
-- **4b:** Hand-written column model (`column-model.ts`) with spread + last-trade side + risk score; header tooltips via `tooltip.tsx`; cached symbol parser (`parse-option-symbol.ts` + `option-symbol-cells.tsx`); numeric cells `dir="ltr"` + tabular nums; two distinct empty states (snapshot vs filter).
+- **4b:** Hand-written column model (`column-model.ts`) with symbol, last, bid, ask and risk score; header tooltips via `tooltip.tsx`; numeric cells `dir="ltr"` + tabular nums; two distinct empty states (snapshot vs filter).
 - **Removed `@tanstack/react-table`** (~12.9 KiB gzip saved); deleted `data-table*.tsx`, `columns.tsx`.
 
 ## Phase 5 — Surrounding UI
@@ -365,7 +365,7 @@ _Exit criteria:_ no hardcoded UI strings remain, both locales render correctly w
 **Done (Phase 6):**
 
 - **6a:** `i18next` + `react-i18next` — bundled `fa`, lazy `en` chunk (`locale-en`); typed `t()` keys; `LocaleProvider` + `LocaleSwitcher`; `changeAppLocale` flips `<html lang/dir>` and Base UI `DirectionProvider`; column descriptions, feed labels (`labelKey`), and all UI strings in dictionaries.
-- **6b:** Theme provider memoized context + OS theme listener; `format-price` / `format-date` locale-aware; `app-layout` named slots; `main.tsx` async bootstrap + `RootErrorBoundary` + MSW behind `VITE_ENABLE_MOCKS`; `msw` moved to devDependencies; removed unused `zustand` and old data-table files.
+- **6b:** Theme provider memoized context + OS theme listener; `format-price` locale-aware; `app-layout` named slots; `main.tsx` async bootstrap + `RootErrorBoundary` + MSW behind `VITE_ENABLE_MOCKS`; `msw` moved to devDependencies; removed unused `zustand` and old data-table files.
 
 ## Phase 7 — Performance proof
 

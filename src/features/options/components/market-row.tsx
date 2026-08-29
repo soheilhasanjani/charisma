@@ -1,5 +1,4 @@
 import { type CSSProperties, memo } from 'react'
-import { useTranslation } from 'react-i18next'
 
 import {
   type ColumnId,
@@ -7,13 +6,6 @@ import {
   MARKET_GRID_TEMPLATE,
 } from '@/features/options/components/column-model'
 import { useSymbolRecord } from '@/features/options/hooks/use-market-data'
-import {
-  OptionExpiryCell,
-  OptionStrikeCell,
-  OptionTickerCell,
-  OptionTypeCell,
-} from '@/features/options/lib/option-symbol-cells'
-import { EMPTY_DISPLAY } from '@/features/options/lib/parse-option-symbol'
 import { recordRowRender } from '@/features/options/lib/render-instrumentation'
 import type { SymbolRecord } from '@/features/options/model/types'
 import type { RiskScoreState } from '@/features/options/risk/types'
@@ -22,6 +14,7 @@ import { formatPrice } from '@/lib/format-price'
 import { cn } from '@/lib/utils'
 
 const MARKET_ROW_HEIGHT = 37
+const EMPTY_DISPLAY = '—'
 
 type MarketRowProps = {
   symbol: string
@@ -93,7 +86,7 @@ type MarketGridCellProps = {
   symbol: string
   record: SymbolRecord | undefined
   sticky?: boolean
-  align: 'start' | 'end' | 'center'
+  align: 'start' | 'end'
 }
 
 const MarketGridCell = memo(function MarketGridCell({
@@ -110,7 +103,7 @@ const MarketGridCell = memo(function MarketGridCell({
       aria-colindex={columnIndex}
       className={cn(
         'flex min-w-0 items-center px-2',
-        alignmentClass(align),
+        align === 'end' ? 'justify-end text-end' : 'justify-start text-start',
         sticky &&
           'bg-background sticky [inset-inline-start:0] z-10 shadow-[1px_0_0_0_var(--border)]',
       )}
@@ -133,13 +126,11 @@ function MarketCellContent({
 }: MarketCellContentProps) {
   switch (columnId) {
     case 'ticker':
-      return <OptionTickerCell symbol={symbol} />
-    case 'strike':
-      return <OptionStrikeCell symbol={symbol} />
-    case 'type':
-      return <OptionTypeCell symbol={symbol} />
-    case 'expiry':
-      return <OptionExpiryCell symbol={symbol} />
+      return (
+        <span dir="ltr" lang="en" className="truncate font-medium" title={symbol}>
+          {symbol}
+        </span>
+      )
     case 'last':
       return (
         <PriceCell
@@ -151,10 +142,6 @@ function MarketCellContent({
       return <NumericCell value={record?.bid?.value} />
     case 'ask':
       return <NumericCell value={record?.ask?.value} />
-    case 'spread':
-      return <SpreadCell record={record} />
-    case 'lastTradeSide':
-      return <LastTradeSideCell side={record?.lastTradeSide} />
     case 'riskScore':
       return <RiskScoreCell riskScore={record?.riskScore} />
   }
@@ -197,55 +184,13 @@ function PriceCell({
   )
 }
 
-function SpreadCell({ record }: { record: SymbolRecord | undefined }) {
-  const bid = record?.bid?.value
-  const ask = record?.ask?.value
-
-  if (
-    bid == null ||
-    ask == null ||
-    !Number.isFinite(bid) ||
-    !Number.isFinite(ask)
-  ) {
-    return <span>{EMPTY_DISPLAY}</span>
-  }
-
-  return (
-    <span dir="ltr" className="tabular-nums">
-      {formatPrice(ask - bid)}
-    </span>
-  )
-}
-
-function LastTradeSideCell({ side }: { side: 'buy' | 'sell' | undefined }) {
-  const { t } = useTranslation()
-
-  if (!side) {
-    return <span>{EMPTY_DISPLAY}</span>
-  }
-
-  return (
-    <span
-      dir="ltr"
-      className={cn(
-        'font-medium',
-        side === 'buy'
-          ? 'text-green-600 dark:text-green-400'
-          : 'text-red-600 dark:text-red-400',
-      )}
-    >
-      {side === 'buy' ? t('trade.sideBuyLabel') : t('trade.sideSellLabel')}
-    </span>
-  )
-}
-
 function RiskScoreCell({
   riskScore,
 }: {
   riskScore: RiskScoreState | undefined
 }) {
   if (!riskScore || riskScore.status !== 'ready') {
-    return <span>—</span>
+    return <span>{EMPTY_DISPLAY}</span>
   }
 
   return (
@@ -255,17 +200,6 @@ function RiskScoreCell({
       })}
     </span>
   )
-}
-
-function alignmentClass(align: 'start' | 'end' | 'center') {
-  switch (align) {
-    case 'end':
-      return 'justify-end text-end'
-    case 'center':
-      return 'justify-center text-center'
-    default:
-      return 'justify-start text-start'
-  }
 }
 
 export { MARKET_ROW_HEIGHT }

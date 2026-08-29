@@ -1,16 +1,6 @@
-export type ColumnId =
-  | 'ticker'
-  | 'strike'
-  | 'type'
-  | 'expiry'
-  | 'last'
-  | 'bid'
-  | 'ask'
-  | 'spread'
-  | 'lastTradeSide'
-  | 'riskScore'
+export type ColumnId = 'ticker' | 'last' | 'bid' | 'ask' | 'riskScore'
 
-export type ColumnAlignment = 'start' | 'end' | 'center'
+export type ColumnAlignment = 'start' | 'end'
 
 export type MarketColumnDef = {
   id: ColumnId
@@ -22,24 +12,9 @@ export type MarketColumnDef = {
 export const MARKET_COLUMNS: MarketColumnDef[] = [
   {
     id: 'ticker',
-    width: 'minmax(7rem, 1.1fr)',
+    width: 'minmax(12rem, 1.4fr)',
     align: 'start',
     sticky: true,
-  },
-  {
-    id: 'strike',
-    width: 'minmax(6rem, 0.9fr)',
-    align: 'end',
-  },
-  {
-    id: 'type',
-    width: 'minmax(4rem, 0.6fr)',
-    align: 'center',
-  },
-  {
-    id: 'expiry',
-    width: 'minmax(6rem, 0.9fr)',
-    align: 'start',
   },
   {
     id: 'last',
@@ -55,16 +30,6 @@ export const MARKET_COLUMNS: MarketColumnDef[] = [
     id: 'ask',
     width: 'minmax(6rem, 0.9fr)',
     align: 'end',
-  },
-  {
-    id: 'spread',
-    width: 'minmax(5rem, 0.7fr)',
-    align: 'end',
-  },
-  {
-    id: 'lastTradeSide',
-    width: 'minmax(5rem, 0.7fr)',
-    align: 'center',
   },
   {
     id: 'riskScore',

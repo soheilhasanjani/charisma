@@ -2,6 +2,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { MARKET_COLUMNS } from '@/features/options/components/column-model'
 import { MarketGridHeader } from '@/features/options/components/market-grid-header'
 import {
   MARKET_ROW_HEIGHT,
@@ -85,7 +86,7 @@ export function MarketGrid({
       <div
         role="grid"
         aria-rowcount={symbols.length + 1}
-        aria-colcount={10}
+        aria-colcount={MARKET_COLUMNS.length}
         className="flex min-h-0 flex-1 flex-col"
       >
         <MarketGridHeader />

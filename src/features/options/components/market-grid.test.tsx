@@ -117,7 +117,7 @@ describe('market grid over a live feed', () => {
     await waitFor(() => {
       const riskCell = screen
         .getByRole('row', { name: /AAPL/ })
-        .querySelector('[aria-colindex="10"]')
+        .querySelector('[aria-colindex="5"]')
       expect(riskCell?.textContent).not.toBe('—')
     })
   })

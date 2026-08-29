@@ -8,7 +8,6 @@ import {
   DialogTitle,
 } from '@/components/primitives/dialog'
 import { useSymbolRecord } from '@/features/options/hooks/use-market-data'
-import { OptionTickerCell } from '@/features/options/lib/option-symbol-cells'
 import { formatPrice } from '@/lib/format-price'
 
 type SymbolDetailDialogProps = {
@@ -26,11 +25,8 @@ export function SymbolDetailDialog({
     <Dialog open={symbol != null} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {symbol ? <OptionTickerCell symbol={symbol} /> : null}
-            <span className="text-muted-foreground text-sm" dir="ltr">
-              {symbol}
-            </span>
+          <DialogTitle>
+            <span dir="ltr">{symbol}</span>
           </DialogTitle>
           <DialogDescription className="sr-only">
             {t('detail.description')}

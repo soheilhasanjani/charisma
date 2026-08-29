@@ -14,7 +14,6 @@ export type SymbolRecord = {
   vega?: Stamped<number>
   stale: boolean
   flashDirection: FlashDirection
-  lastTradeSide?: 'buy' | 'sell'
   riskScore?: RiskScoreState
 }
 

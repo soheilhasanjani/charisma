@@ -120,7 +120,7 @@ describe('column header help', () => {
       name: /راهنمای ستون/,
     })
 
-    expect(helpButtons).toHaveLength(10)
+    expect(helpButtons).toHaveLength(5)
 
     for (const button of helpButtons) {
       const describedBy = button.getAttribute('aria-describedby')

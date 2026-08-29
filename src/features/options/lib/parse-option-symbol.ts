@@ -1,5 +1,3 @@
-const EMPTY_DISPLAY = '-'
-
 const optionTypeByCode = {
   C: 'call',
   P: 'put',
@@ -76,5 +74,3 @@ function parseOptionSymbolUncached(symbol: string): ParsedOptionSymbol | null {
 export function clearParseOptionSymbolCacheForTests() {
   parseCache.clear()
 }
-
-export { EMPTY_DISPLAY }

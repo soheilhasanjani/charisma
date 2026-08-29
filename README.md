@@ -18,8 +18,8 @@ backend to run.
 
 ## Features
 
-- **Live grid** — symbol, strike, type, expiry, last, bid, ask, spread, trade side
-  and risk score, updating in place. Only rows whose symbol changed re-render.
+- **Live grid** — symbol, last, bid, ask and risk score, updating in place.
+  Only rows whose symbol changed re-render.
 - **Client-side risk engine** — the supplied `calculateRiskScore` runs in a Web
   Worker, scoped to the visible window so a 500-iteration trig loop never blocks a
   frame.
