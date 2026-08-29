@@ -22,7 +22,7 @@ correct.
 
 Test at the transport boundary, not below it. A fake `WebSocket` is injected via
 `createMarketRuntime({ webSocketFactory })`; everything above it — decoders,
-controller, stores, scheduler, ranking, grid — is production code.
+controller, stores, scheduler, grid — is production code.
 
 Two specific guards:
 

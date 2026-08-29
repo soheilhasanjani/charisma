@@ -54,12 +54,3 @@ export type FeedStatusRecord = {
   authority: FeedAuthority
   labelKey: FeedStatusLabelKey
 }
-
-export type SortDirection = 'asc' | 'desc'
-
-export type SortColumn = 'symbol' | 'last' | 'bid' | 'ask' | 'riskScore'
-
-export type SortState = {
-  column: SortColumn
-  direction: SortDirection
-}

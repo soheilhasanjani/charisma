@@ -1,5 +1,5 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { MarketGridHeader } from '@/features/options/components/market-grid-header'
@@ -7,7 +7,6 @@ import {
   MARKET_ROW_HEIGHT,
   MarketRow,
 } from '@/features/options/components/market-row'
-import { useGridKeyboard } from '@/features/options/hooks/use-grid-keyboard'
 import { useMarketRuntime } from '@/features/options/hooks/use-market-runtime'
 import { cn } from '@/lib/utils'
 
@@ -33,8 +32,6 @@ export function MarketGrid({
   const { t } = useTranslation()
   const runtime = useMarketRuntime()
   const scrollRef = useRef<HTMLDivElement>(null)
-  const [isScrolling, setIsScrolling] = useState(false)
-  const scrollEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual cannot be memoized by React Compiler
   const rowVirtualizer = useVirtualizer({
@@ -46,14 +43,6 @@ export function MarketGrid({
       ? (element) => element.getBoundingClientRect().height
       : undefined,
     overscan: 8,
-  })
-
-  const keyboard = useGridKeyboard({
-    symbols,
-    scrollRef,
-    rowVirtualizer,
-    rowHeight: MARKET_ROW_HEIGHT,
-    onRowActivate,
   })
 
   const virtualItems = rowVirtualizer.getVirtualItems()
@@ -69,29 +58,6 @@ export function MarketGrid({
 
     runtime.setViewportSymbols(visibleSymbolsKey.split('\0'))
   }, [runtime, visibleSymbolsKey])
-
-  const handleScroll = useCallback(() => {
-    runtime.setOrderLocked(true)
-    setIsScrolling(true)
-
-    if (scrollEndTimerRef.current != null) {
-      clearTimeout(scrollEndTimerRef.current)
-    }
-
-    scrollEndTimerRef.current = setTimeout(() => {
-      scrollEndTimerRef.current = null
-      setIsScrolling(false)
-      runtime.setOrderLocked(false)
-    }, 150)
-  }, [runtime])
-
-  useEffect(() => {
-    return () => {
-      if (scrollEndTimerRef.current != null) {
-        clearTimeout(scrollEndTimerRef.current)
-      }
-    }
-  }, [])
 
   if (symbols.length === 0 && emptyKind) {
     return (
@@ -115,24 +81,12 @@ export function MarketGrid({
   }
 
   return (
-    <MarketGridShell
-      className={className}
-      onPointerEnter={() => {
-        runtime.setOrderLocked(true)
-      }}
-      onPointerLeave={() => {
-        if (!isScrolling) {
-          runtime.setOrderLocked(false)
-        }
-      }}
-    >
+    <MarketGridShell className={className}>
       <div
         role="grid"
         aria-rowcount={symbols.length + 1}
         aria-colcount={10}
-        tabIndex={0}
-        className="flex min-h-0 flex-1 flex-col outline-none"
-        onKeyDown={keyboard.handleGridKeyDown}
+        className="flex min-h-0 flex-1 flex-col"
       >
         <MarketGridHeader />
 
@@ -140,7 +94,6 @@ export function MarketGrid({
           ref={scrollRef}
           className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain"
           role="presentation"
-          onScroll={handleScroll}
         >
           <div
             role="rowgroup"
@@ -154,20 +107,12 @@ export function MarketGrid({
                 return null
               }
 
-              const isFocused = keyboard.focusedIndex === virtualRow.index
-
               return (
                 <MarketRow
                   key={symbol}
                   symbol={symbol}
                   virtualIndex={virtualRow.index}
                   ariaRowIndex={virtualRow.index + 2}
-                  tabIndex={isFocused ? 0 : -1}
-                  isFocused={isFocused}
-                  onFocus={() => {
-                    keyboard.setFocusedIndex(virtualRow.index)
-                  }}
-                  onKeyDown={keyboard.handleRowKeyDown}
                   onActivate={() => {
                     onRowActivate?.(symbol)
                   }}
@@ -176,7 +121,6 @@ export function MarketGrid({
                   }}
                   rowRef={(node) => {
                     rowVirtualizer.measureElement(node)
-                    keyboard.registerRowRef(symbol, node)
                   }}
                 />
               )
@@ -191,13 +135,9 @@ export function MarketGrid({
 function MarketGridShell({
   children,
   className,
-  onPointerEnter,
-  onPointerLeave,
 }: {
   children: React.ReactNode
   className?: string
-  onPointerEnter?: () => void
-  onPointerLeave?: () => void
 }) {
   return (
     <div
@@ -205,8 +145,6 @@ function MarketGridShell({
         'flex h-[min(50rem,70dvh)] flex-col overflow-hidden rounded-lg border',
         className,
       )}
-      onPointerEnter={onPointerEnter}
-      onPointerLeave={onPointerLeave}
     >
       {children}
     </div>

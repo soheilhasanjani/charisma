@@ -1,5 +1,3 @@
-import type { SortColumn } from '@/features/options/model/types'
-
 export type ColumnId =
   | 'ticker'
   | 'strike'
@@ -18,8 +16,6 @@ export type MarketColumnDef = {
   id: ColumnId
   width: string
   align: ColumnAlignment
-  sortable?: boolean
-  sortColumn?: SortColumn
   sticky?: boolean
 }
 
@@ -28,8 +24,6 @@ export const MARKET_COLUMNS: MarketColumnDef[] = [
     id: 'ticker',
     width: 'minmax(7rem, 1.1fr)',
     align: 'start',
-    sortable: true,
-    sortColumn: 'symbol',
     sticky: true,
   },
   {
@@ -51,22 +45,16 @@ export const MARKET_COLUMNS: MarketColumnDef[] = [
     id: 'last',
     width: 'minmax(6rem, 0.9fr)',
     align: 'end',
-    sortable: true,
-    sortColumn: 'last',
   },
   {
     id: 'bid',
     width: 'minmax(6rem, 0.9fr)',
     align: 'end',
-    sortable: true,
-    sortColumn: 'bid',
   },
   {
     id: 'ask',
     width: 'minmax(6rem, 0.9fr)',
     align: 'end',
-    sortable: true,
-    sortColumn: 'ask',
   },
   {
     id: 'spread',
@@ -82,8 +70,6 @@ export const MARKET_COLUMNS: MarketColumnDef[] = [
     id: 'riskScore',
     width: 'minmax(6rem, 0.9fr)',
     align: 'end',
-    sortable: true,
-    sortColumn: 'riskScore',
   },
 ]
 

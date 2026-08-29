@@ -151,10 +151,6 @@ some are open questions.
   overnight does not accumulate memory.
 - **What if a frame overruns?** The scheduler drops to flushing every second or
   third frame instead of falling progressively behind.
-- **Sorting a live column?** At 5000 rows sorted by risk score, rows leapfrog
-  continuously and the grid becomes unusable; the fix is not faster sorting. Order
-  is recomputed on a throttle and held stable while the pointer is over the grid or
-  a scroll is in flight.
 - **Snapshot racing live data?** The socket connects immediately and the mock sends
   a burst on connect, so live values routinely arrive _before_ the REST response.
   Applying the snapshot naively overwrites fresh prices with stale ones. Each field
@@ -189,7 +185,6 @@ some are open questions.
 | `riskCalculator`      | 500-iteration sin/cos loop; 40.43 ms for the whole book      | One worker + viewport scope + memo cache on unchanged inputs                  | Worker pool (a ten-line change); the numbers say it is not needed yet |
 | Successive re-renders | The naive React shape reconciles the whole table per message | Per-key subscription + rAF flush + virtualization + `memo` on cells           | Split the hottest cells out to field-level subscriptions              |
 | Main-thread decoding  | O(messages) and unavoidable                                  | Hand-written type guards; measured at 1.13 ms per second                      | Move socket + decoder into a worker and post conflated batches        |
-| Order recomputation   | Sorting 5000 entries every frame is expensive                | Throttle + order lock during hover/scroll + array comparison before notifying | Incremental ordered structure (heap) instead of a full sort           |
 | GC pressure           | A new record object per tick                                 | Small immutable records; reused `Float64Array` buffer in the worker           | Columnar TypedArray storage instead of an object per symbol           |
 | DOM size              | 5000 rows = 50,000 cells                                     | Virtualization: only the visible window is mounted                            | —                                                                     |
 

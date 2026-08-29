@@ -1,11 +1,10 @@
-import { lazy, Suspense, useCallback, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/primitives/button'
 import { Skeleton } from '@/components/primitives/skeleton'
 import { MarketGrid } from '@/features/options/components/market-grid'
 import { SymbolFilter } from '@/features/options/components/symbol-filter'
-import { useRankedSymbols } from '@/features/options/hooks/use-market-data'
 import { useOptionsSnapshot } from '@/features/options/hooks/use-options-snapshot'
 import { useSnapshotSeed } from '@/features/options/hooks/use-snapshot-seed'
 import {
@@ -24,7 +23,6 @@ export function OptionsPage() {
   const { t } = useTranslation()
   const { data, error, isError, isFetching, isPending, refetch } =
     useOptionsSnapshot()
-  const rankedSymbols = useRankedSymbols()
   const {
     selected,
     selectedSet,
@@ -33,28 +31,18 @@ export function OptionsPage() {
     clearAll,
     knownSymbols,
   } = useSymbolFilter()
-  const symbols = useFilteredSymbols(rankedSymbols, selected)
+  const symbols = useFilteredSymbols(knownSymbols, selected)
   const [detailSymbol, setDetailSymbol] = useState<string | null>(null)
-  const detailReturnSymbolRef = useRef<string | null>(null)
 
   useSnapshotSeed()
 
   const handleRowActivate = useCallback((symbol: string) => {
-    detailReturnSymbolRef.current = symbol
     setDetailSymbol(symbol)
   }, [])
 
   const handleDetailOpenChange = useCallback((open: boolean) => {
     if (!open) {
       setDetailSymbol(null)
-      const returnSymbol = detailReturnSymbolRef.current
-      if (returnSymbol) {
-        requestAnimationFrame(() => {
-          document
-            .querySelector<HTMLElement>(`[data-symbol="${returnSymbol}"]`)
-            ?.focus()
-        })
-      }
     }
   }, [])
 

@@ -24,9 +24,8 @@ Remove `@tanstack/react-table`. Keep `@tanstack/react-virtual`, which does one j
 well and has no equivalent problem.
 
 Columns are declared in `src/features/options/components/column-model.ts`: a typed
-array carrying id, alignment, width, sortability and a description key. Sorting and
-filtering live in the state layer — `ranking.ts` produces a throttled, stable
-ordered `symbol[]`.
+array carrying id, alignment, width and a description key. Filtering lives in the
+state layer; the grid receives symbol strings.
 
 The grid is purpose-built from divs with `role="grid"`, `role="row"`,
 `role="columnheader"` and `role="gridcell"`, full aria indexing, and one
@@ -36,14 +35,7 @@ guaranteed by construction rather than by coincidence.
 ## Consequences
 
 - 12.9 KiB gzipped removed, and the remaining column model is a readable array.
-- Real grid semantics, plus roving-tabindex keyboard navigation with focus
-  restoration when virtualization unmounts the focused row.
-- Sorting is ours to get right. It is recomputed on a throttle rather than per
-  frame, and held stable while the pointer is over the grid or a scroll is in
-  flight, because rows leapfrogging under the cursor makes a live grid unusable.
-  One bug shipped here: the throttle was written as a debounce on a path called
-  every frame, so the timer was always reset and the order never recomputed. Fixed,
-  with a test that drives 120 frames of invalidation.
+- Real grid semantics without a table library owning the render path.
 - A reviewer expecting TanStack Table has to read this ADR to see it was a decision.
   That is the cost of the decision, and the measured number is the answer.
 

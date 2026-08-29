@@ -125,15 +125,15 @@ export function useSymbolFilter() {
 }
 
 export function useFilteredSymbols(
-  rankedSymbols: readonly string[],
+  symbols: readonly string[],
   selected: readonly string[],
 ) {
   return useMemo(() => {
     if (selected.length === 0) {
-      return [...rankedSymbols]
+      return [...symbols]
     }
 
     const allowed = new Set(selected)
-    return rankedSymbols.filter((symbol) => allowed.has(symbol))
-  }, [rankedSymbols, selected])
+    return symbols.filter((symbol) => allowed.has(symbol))
+  }, [selected, symbols])
 }

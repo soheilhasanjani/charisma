@@ -139,16 +139,4 @@ describe('column header help', () => {
       screen.getByText(fa.columns.riskScore.description),
     ).toBeInTheDocument()
   })
-
-  it('keeps help controls out of the grid tab order', () => {
-    renderWithProviders(<MarketGridHeader />, {
-      runtime: runtimeWithIdleTransport(),
-    })
-
-    for (const button of screen.getAllByRole('button', {
-      name: /راهنمای ستون/,
-    })) {
-      expect(button).toHaveAttribute('tabindex', '-1')
-    }
-  })
 })

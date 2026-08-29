@@ -166,8 +166,8 @@ Each becomes a numbered ADR under `docs/adr/`, with context, decision, consequen
 - **Viewport-scoped risk computation.** `calculateRiskScore` runs a 500-iteration trig loop (~1000 transcendental ops per call); 5000 symbols per frame is ~5M ops/frame and impossible. Only symbols in the virtual window compute at frame rate; off-screen symbols keep raw quotes plus a stale flag, resolved on an idle pass or on scroll-in. The documented invariant: _any risk score a user can see is derived from the latest message received for that symbol._ A `riskComputeMode: 'viewport' | 'all'` switch allows flipping to eager mode to watch the HUD degrade.
 - **One Web Worker, packed transfers.** Inputs pack into a `Float64Array` (7 floats x N) transferred zero-copy; the worker returns the buffer for reuse so there is no per-frame allocation churn. Sequence numbers drop stale batches. Synchronous viewport-only fallback when `Worker` is unavailable, which also makes it testable in jsdom. A pool is a ten-line change if needed, and the Phase 7 numbers show it currently isn't.
 - **Hand-written decoders, not Zod.** Discriminated-union type guards cost essentially nothing per message; a schema library at 5000 msg/s is measurable, and it is bundle weight. Strict validation runs behind `import.meta.env.DEV`, so development keeps schema safety and production keeps the bytes.
-- **Column definitions decided by measurement.** TanStack Table's row models require the full dataset in React state, which is exactly what this architecture avoids, so filtering and sorting live in a `ranking` module in the state layer and the grid receives symbol strings. Whether the library stays purely for column definitions is settled by the Phase 0 analyzer number and written down either way.
-- **Purpose-built `role="grid"`.** Divs with `role="grid"/"row"/"gridcell"` and full aria indexing, a single `gridTemplateColumns` CSS variable shared by header and body so alignment is guaranteed by construction, sticky header and symbol column, roving-tabindex keyboard navigation with focus restoration across virtualization unmounts.
+- **Column definitions decided by measurement.** TanStack Table's row models require the full dataset in React state, which is exactly what this architecture avoids, so filtering lives in the state layer and the grid receives symbol strings. Whether the library stays purely for column definitions is settled by the Phase 0 analyzer number and written down either way.
+- **Purpose-built `role="grid"`.** Divs with `role="grid"/"row"/"gridcell"` and full aria indexing, a single `gridTemplateColumns` CSS variable shared by header and body so alignment is guaranteed by construction, sticky header and symbol column.
 
 ## Honouring bundle, splitting and readability
 
@@ -192,7 +192,7 @@ src/
     scheduler/             # frame-scheduler
     store/                 # create-entity-store
   features/options/
-    model/                 # runtime factory, stores, controller, ranking
+    model/                 # runtime factory, stores, controller
     risk/                  # engine facade, risk.worker, packed protocol
     components/            # market-grid, symbol-filter, last-trade-banner, feed-status-badge, details-dialog
     hooks/ api/ lib/ pages/
@@ -216,7 +216,7 @@ Reading `src/mocks/ws-handlers.ts` surfaces five things the brief doesn't mentio
 Collected here because each one is a silent bug rather than a visible omission:
 
 - **Snapshot versus live race.** The WebSocket connects immediately and the mock pushes a ticker burst on connect, so live values routinely land _before_ the REST snapshot resolves. Applying the snapshot naively then overwrites fresh prices with stale ones, and the same hazard reappears on every resync. Each record therefore carries a per-field revision stamp and the snapshot is applied as a _fill_, never a _clobber_: it seeds fields no message has touched and is discarded for fields already newer. This is the single most likely source of a hard-to-reproduce wrong-price bug in the whole app.
-- **Non-finite risk scores.** `spreadComponent` divides by `last`, so a zero or missing `last` yields `Infinity` or `NaN` and poisons the column and any sort that reads it. A symbol that has received a `ticker` but never a `greeks` message is in the same position. The engine returns an explicit "not computable yet" state rather than a number, the cell renders a neutral placeholder, and the ranking module sorts those to the end instead of comparing `NaN`.
+- **Non-finite risk scores.** `spreadComponent` divides by `last`, so a zero or missing `last` yields `Infinity` or `NaN` and poisons the column. A symbol that has received a `ticker` but never a `greeks` message is in the same position. The engine returns an explicit "not computable yet" state rather than a number, and the cell renders a neutral placeholder.
 - **Worker failure.** A worker can fail to construct (CSP, blocked blob URL) or die mid-flight. `onerror` and `onmessageerror` flip the engine permanently to the synchronous viewport path and surface a one-line dev warning, so a worker problem degrades performance instead of emptying a column.
 - **Sorting a live column.** Sorting by Risk Score or price on a 5000-row feed makes rows leapfrog continuously and the grid becomes unusable — the correct fix is not faster sorting. Order is recomputed on a throttle rather than per frame, and it is held stable while the pointer is over the grid or a scroll is in progress, with a subtle indicator that a reorder is pending.
 - **Two different empty states.** "The snapshot returned nothing" and "your filter excludes every symbol" need different copy and different recovery affordances; the current single `نتیجه‌ای یافت نشد.` string covers neither well.
@@ -291,7 +291,7 @@ _Exit criteria:_ the socket connects to the MSW mock, survives a devtools-simula
 
 **2a. Dependency diet.** Swap axios for a native `fetch` wrapper with `AbortSignal.timeout`, same public interface, keeping the good Persian error mapping in `src/lib/http/errors.ts`. Fix `package.json` dependency placement.
 
-**2b. Runtime and stores.** `createMarketRuntime()` assembles the socket, the `MarketController` that translates decoded messages into store writes plus dirty marks, and the stores described above. Records carry per-field revision stamps so the snapshot fills gaps without clobbering fresher live values — the race described earlier. Snapshot seeding also reconciles the duplicate stale-time policies between `src/lib/query/query-client.ts` and the snapshot query, and the same path serves the gap resync triggered on tab resume or reconnection. The `ranking` module produces a stable ordered `symbol[]` on a throttle, holding order steady while the pointer is over the grid or a scroll is in flight.
+**2b. Runtime and stores.** `createMarketRuntime()` assembles the socket, the `MarketController` that translates decoded messages into store writes plus dirty marks, and the stores described above. Records carry per-field revision stamps so the snapshot fills gaps without clobbering fresher live values — the race described earlier. Snapshot seeding also reconciles the duplicate stale-time policies between `src/lib/query/query-client.ts` and the snapshot query, and the same path serves the gap resync triggered on tab resume or reconnection.
 
 _Exit criteria:_ live data flows into the stores and can be read for any symbol; a snapshot resolving _after_ live ticks provably does not regress prices; a simulated gap triggers a resync; the existing table still renders.
 
@@ -301,7 +301,6 @@ _Exit criteria:_ live data flows into the stores and can be read for any symbol;
 - **2b:** `createMarketRuntime()` wires socket, scheduler, `MarketController`, and stores (`symbol`, `lastTrade`, `feedStatus`, `selection`, `viewport`).
 - Per-field revision stamps (`SNAPSHOT_REVISION = 0`, live ≥ 1) with fill-not-clobber in `snapshot-reconcile.ts`.
 - `MarketRuntimeProvider` + `useSnapshotSeed` — one `useEffect` starts/stops runtime; snapshot seeds stores; `onResyncNeeded` refetches on gap.
-- `ranking` module with throttled reorder and order-lock hook for Phase 4 sorting.
 - Table reads live rows via `useOptionsTableRows()` (falls back to query data until runtime seeds).
 - `feed-smoke.ts` removed — runtime replaces it.
 - Tests: `snapshot-reconcile.test.ts` proves live beats late snapshot.
@@ -325,18 +324,18 @@ _Exit criteria:_ risk scores land in the stores within one frame of a tick, the 
 
 ## Phase 4 — The grid
 
-**4a. Grid.** Divs with `role="grid"/"row"/"columnheader"/"gridcell"` and full aria indexing; one `gridTemplateColumns` CSS variable shared by header and body so alignment cannot drift; sticky header and sticky symbol column; roving-tabindex keyboard navigation (arrows, Home/End, PageUp/PageDown, Enter) with focus restoration when virtualization unmounts the focused row; `MarketRow` takes only a symbol and an offset and subscribes via `useSyncExternalStore`; memoized cells; price flash honouring `prefers-reduced-motion`. React Scan is the acceptance tool here: a tick must repaint one row and nothing else.
+**4a. Grid.** Divs with `role="grid"/"row"/"columnheader"/"gridcell"` and full aria indexing; one `gridTemplateColumns` CSS variable shared by header and body so alignment cannot drift; sticky header and sticky symbol column; `MarketRow` takes only a symbol and an offset and subscribes via `useSyncExternalStore`; memoized cells; price flash honouring `prefers-reduced-motion`. React Scan is the acceptance tool here: a tick must repaint one row and nothing else.
 
-**4b. Columns and header help.** The column model gains Risk Score, spread and last-trade side, with `meta` carrying width, alignment and a **description key**. Every header renders its label plus a question-mark icon that opens `src/components/primitives/tooltip.tsx` with that column's description — the Risk Score one explaining the formula's three components. The icon is a real focusable button with an `aria-label`, associated by `aria-describedby`, and deliberately excluded from the grid's roving tabindex so it never traps arrow-key navigation. Descriptions are i18n keys from the start, filled in Phase 6. `format-option-symbol` splits into a cached pure parser (module-level `Map`; the symbol set is finite and immutable) plus separate cell renderers, so each symbol parses once instead of four times per row per render.
+**4b. Columns and header help.** The column model gains Risk Score, spread and last-trade side, with `meta` carrying width, alignment and a **description key**. Every header renders its label plus a question-mark icon that opens `src/components/primitives/tooltip.tsx` with that column's description — the Risk Score one explaining the formula's three components. The icon is a real button with an `aria-label`, associated by `aria-describedby`. Descriptions are i18n keys from the start, filled in Phase 6. `format-option-symbol` splits into a cached pure parser (module-level `Map`; the symbol set is finite and immutable) plus separate cell renderers, so each symbol parses once instead of four times per row per render.
 
-Headers are also the sort control, backed by the throttled `ranking` module rather than a row model, with the order-stability behaviour described earlier and `aria-sort` reflecting state. Numeric cells carry `dir="ltr"` with tabular figures, layout uses logical properties throughout, and the two empty states get distinct copy and recovery affordances.
+Numeric cells carry `dir="ltr"` with tabular figures, layout uses logical properties throughout, and the two empty states get distinct copy and recovery affordances.
 
-_Exit criteria:_ live-updating rows with a Risk Score column, sorting that doesn't make rows leapfrog, every header explains itself, keyboard-only navigation works end to end, correct rendering in both text directions, and React Scan showing no collateral repaints.
+_Exit criteria:_ live-updating rows with a Risk Score column, every header explains itself, correct rendering in both text directions, and React Scan showing no collateral repaints.
 
 **Done (Phase 4):**
 
-- **4a:** Purpose-built `role="grid"` layout (`market-grid.tsx`, `market-row.tsx`) with shared `--market-grid-columns`, sticky header + sticky symbol column, per-row `useSyncExternalStore` via `useSymbolRecord`, roving tabindex keyboard nav (arrows, Home/End, PageUp/PageDown), focus restoration on virtual unmount, price flash with `prefers-reduced-motion` (`motion-safe:` + CSS keyframes), viewport symbols wired to `runtime.setViewportSymbols()`, order lock on pointer hover + scroll.
-- **4b:** Hand-written column model (`column-model.ts`) with spread + last-trade side + risk score; header tooltips via `tooltip.tsx` (help icon `tabIndex={-1}`); sort via throttled `ranking` + `aria-sort`; cached symbol parser (`parse-option-symbol.ts` + `option-symbol-cells.tsx`); numeric cells `dir="ltr"` + tabular nums; two distinct empty states (snapshot vs filter).
+- **4a:** Purpose-built `role="grid"` layout (`market-grid.tsx`, `market-row.tsx`) with shared `--market-grid-columns`, sticky header + sticky symbol column, per-row `useSyncExternalStore` via `useSymbolRecord`, price flash with `prefers-reduced-motion` (`motion-safe:` + CSS keyframes), viewport symbols wired to `runtime.setViewportSymbols()`.
+- **4b:** Hand-written column model (`column-model.ts`) with spread + last-trade side + risk score; header tooltips via `tooltip.tsx`; cached symbol parser (`parse-option-symbol.ts` + `option-symbol-cells.tsx`); numeric cells `dir="ltr"` + tabular nums; two distinct empty states (snapshot vs filter).
 - **Removed `@tanstack/react-table`** (~12.9 KiB gzip saved); deleted `data-table*.tsx`, `columns.tsx`.
 
 ## Phase 5 — Surrounding UI
@@ -407,7 +406,7 @@ Pick the model by _failure cost_ — subtle concurrency bugs and perf regression
 | **Phase 2** — snapshot/live race     | **GPT-5.3 Codex**                                  | Per-field revision stamps and fill-not-clobber logic need precise, testable implementation.              |
 | **Phase 2** — dependency diet        | **Composer 2.5 Fast**                              | axios → fetch swap is mechanical once the interface is fixed.                                            |
 | **Phase 3** — risk worker            | **Claude Opus 5 Thinking (XHigh)**                 | Packed `Float64Array` transfers, stale-batch drop, and sync fallback are perf- and correctness-critical. |
-| **Phase 4a** — accessible grid       | **Claude Sonnet 5 Thinking (High)**                | `role="grid"`, roving tabindex, focus restoration across virtualization — dense a11y spec.               |
+| **Phase 4a** — accessible grid       | **Claude Sonnet 5 Thinking (High)**                | `role="grid"` and virtualization with per-row subscriptions — dense a11y and layout spec.                |
 | **Phase 4b** — columns (no TanStack) | **GPT-5.3 Codex**                                  | Hand-written column model + cached symbol parser; table lib removed per baseline measurement.            |
 | **Phase 5** — filter, banner, dialog | **Composer 2.5 Fast**                              | Standard React UI on existing stores; Base UI + virtual list patterns are documented.                    |
 | **Phase 5** — feed status badge      | **Claude Sonnet 5 Thinking (High)**                | Three-way derived liveness state is easy to misread from the brief alone.                                |

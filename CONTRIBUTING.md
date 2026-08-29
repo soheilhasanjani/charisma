@@ -69,17 +69,14 @@ per-key notification.
 
 1. Add the id to `MARKET_COLUMNS` in
    [column-model.ts](./src/features/options/components/column-model.ts) with its
-   width, alignment, and whether it sorts.
+   width and alignment.
 2. Add `columns.<id>.header` and `columns.<id>.description` to
    [fa.ts](./src/i18n/resources/fa.ts) and [en.ts](./src/i18n/resources/en.ts). The
    description becomes the question-mark tooltip automatically — the header renders
    it without further work.
 3. Add a `case` to `MarketCellContent` in
    [market-row.tsx](./src/features/options/components/market-row.tsx).
-4. If it sorts, add the key to `SortColumn` in
-   [types.ts](./src/features/options/model/types.ts) and to `readSortValue` in
-   [ranking.ts](./src/features/options/model/ranking.ts).
-5. Bump `aria-colcount` in [market-grid.tsx](./src/features/options/components/market-grid.tsx).
+4. Bump `aria-colcount` in [market-grid.tsx](./src/features/options/components/market-grid.tsx).
 
 ### Add a WebSocket message type
 
@@ -122,7 +119,7 @@ what it was derived from. Change them there, not at the call site.
 
 ## Testing
 
-- **Unit** for pure logic: stores, scheduler, decoders, ranking, formatters.
+- **Unit** for pure logic: stores, scheduler, decoders, formatters.
 - **Integration** for anything crossing layers. Inject a fake transport with
   `createMarketRuntime({ webSocketFactory })` and let real code run above it —
   see [market-grid.test.tsx](./src/features/options/components/market-grid.test.tsx).

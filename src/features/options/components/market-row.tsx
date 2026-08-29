@@ -28,10 +28,6 @@ type MarketRowProps = {
   virtualIndex: number
   ariaRowIndex: number
   style: CSSProperties
-  tabIndex: number
-  isFocused: boolean
-  onFocus: () => void
-  onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => void
   onActivate?: () => void
   rowRef?: (node: HTMLDivElement | null) => void
 }
@@ -41,10 +37,6 @@ export const MarketRow = memo(function MarketRow({
   virtualIndex,
   ariaRowIndex,
   style,
-  tabIndex,
-  isFocused,
-  onFocus,
-  onKeyDown,
   onActivate,
   rowRef,
 }: MarketRowProps) {
@@ -60,24 +52,24 @@ export const MarketRow = memo(function MarketRow({
       ref={rowRef}
       role="row"
       aria-rowindex={ariaRowIndex}
-      aria-selected={isFocused}
-      tabIndex={tabIndex}
+      tabIndex={0}
       data-index={virtualIndex}
       data-symbol={symbol}
-      className={cn(
-        'absolute grid w-full items-center border-b text-sm outline-none',
-        isFocused && 'bg-accent/40 ring-ring ring-1 ring-inset',
-      )}
+      className="hover:bg-muted/40 absolute grid w-full cursor-pointer items-center border-b text-sm outline-none"
       style={{
         ...style,
         gridTemplateColumns: 'var(--market-grid-columns)',
         height: MARKET_ROW_HEIGHT,
         ['--market-grid-columns' as string]: MARKET_GRID_TEMPLATE,
       }}
-      onFocus={onFocus}
-      onKeyDown={onKeyDown}
       onClick={() => {
         onActivate?.()
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onActivate?.()
+        }
       }}
     >
       {MARKET_COLUMNS.map((column, columnIndex) => (

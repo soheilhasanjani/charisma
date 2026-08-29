@@ -21,7 +21,7 @@ knows our store, whereas most React developers already know zustand.
 The boundary is update frequency, not layer.
 
 **zustand** owns the slices that change at user or connection speed:
-`selection`, `feedStatus`, `lastTrade`, `viewport`, `sort`, `knownSymbols`. Each is
+`selection`, `feedStatus`, `lastTrade`, `viewport`, `knownSymbols`. Each is
 a `createStore` from `zustand/vanilla`, so the model layer stays React-free, and
 components read them with `useStore`.
 

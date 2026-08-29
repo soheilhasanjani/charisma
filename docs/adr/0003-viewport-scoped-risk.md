@@ -43,8 +43,8 @@ is no per-frame allocation churn. Batch sequence numbers discard stale results.
 - One worker, not a pool. The bench shows a single worker covers viewport work with
   wide margin; a pool would be a ten-line change if that stopped being true.
 - Symbols with no greeks yet, or a zero `last` that would make the spread term
-  non-finite, resolve to an explicit not-computable state rather than `NaN`, and the
-  ranking module sorts those last instead of comparing `NaN`.
+  non-finite, resolve to an explicit not-computable state rather than `NaN`. The
+  cell renders a placeholder instead of a number.
 - If the worker cannot be constructed — CSP, blocked blob URL — or dies mid-flight,
   the engine degrades permanently to the synchronous viewport path. A worker problem
   costs performance, not a blank column. This path also runs in jsdom, which is how

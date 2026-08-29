@@ -17,16 +17,6 @@ export function useSymbolRecord(symbol: string) {
   )
 }
 
-export function useRankedSymbols() {
-  const runtime = useMarketRuntime()
-
-  return useSyncExternalStore(
-    (listener) => runtime.ranking.subscribe(listener),
-    () => runtime.ranking.getSnapshot(),
-    () => runtime.ranking.getSnapshot(),
-  )
-}
-
 export function useFeedStatus() {
   const runtime = useMarketRuntime()
 

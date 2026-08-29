@@ -13,11 +13,9 @@
 
 import { createStore, type StoreApi } from 'zustand/vanilla'
 
-import { DEFAULT_SORT } from '@/features/options/model/ranking'
 import type {
   FeedStatusRecord,
   LastTradeRecord,
-  SortState,
 } from '@/features/options/model/types'
 
 export type LastTradeState = {
@@ -76,12 +74,6 @@ export function createViewportStore(): ViewportStore {
     symbols: [],
     visible: EMPTY_VISIBLE,
   }))
-}
-
-export type SortStore = StoreApi<SortState>
-
-export function createSortStore(): SortStore {
-  return createStore<SortState>()(() => DEFAULT_SORT)
 }
 
 export type KnownSymbolsState = {

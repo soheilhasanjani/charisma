@@ -2,7 +2,7 @@
  * Integration tests over the real pipeline.
  *
  * A fake transport is injected at the WebSocket boundary; everything above it —
- * decoders, controller, stores, scheduler, ranking, grid — is production code.
+ * decoders, controller, stores, scheduler, grid — is production code.
  * These are the tests that would have caught the feed being dead, which every
  * unit test missed.
  */

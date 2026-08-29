@@ -33,8 +33,8 @@ backend to run.
   server's reported status, and time since the last message) rather than trusting
   `readyState`, so a socket that goes quiet is reported instead of shown as healthy.
 - **Persian and English** with runtime RTL/LTR switching, and dark/light themes.
-- **Accessibility** — real `role="grid"` semantics with full aria indexing, keyboard
-  navigation, per-column help tooltips, and `prefers-reduced-motion` respected.
+- **Accessibility** — real `role="grid"` semantics with full aria indexing,
+  per-column help tooltips, and `prefers-reduced-motion` respected.
 
 ## Scripts
 
