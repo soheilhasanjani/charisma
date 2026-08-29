@@ -8,14 +8,17 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { resolveWebSocketUrl } from '@/core/config/feed-config'
+import { WS_OPTIONS_URL } from '@/core/config/feed-config'
+import { env } from '@/lib/env'
 import { wsHandlers } from '@/mocks/ws-handlers'
 
 const [optionsHandler] = wsHandlers
 
 describe('mock feed contract', () => {
   it('resolves a WebSocket URL that the mock handler matches', () => {
-    expect(optionsHandler.test(resolveWebSocketUrl())).toBe(true)
+    expect(optionsHandler.test(WS_OPTIONS_URL)).toBe(true)
+    expect(env.wsUrl).toBe(WS_OPTIONS_URL)
+    expect(optionsHandler.test(env.wsUrl)).toBe(true)
   })
 
   it('does not match an origin-derived URL, which is why the port must be omitted', () => {

@@ -1,7 +1,8 @@
 /**
  * rAF frame scheduler — conflates per-key dirty marks, adaptive cadence, instrumentation.
- * Consumed by MarketController (Phase 2) and the perf HUD (Phase 7).
  */
+
+import { FRAME_BUDGET_MS } from '@/core/config/feed-config'
 
 export interface FrameSchedulerMetrics {
   messagesMarked: number
@@ -27,12 +28,10 @@ export interface FrameScheduler {
   getMetrics: () => FrameSchedulerMetrics
 }
 
-const DEFAULT_FRAME_BUDGET_MS = 12
-
 export function createFrameScheduler(
   options: FrameSchedulerOptions,
 ): FrameScheduler {
-  const frameBudgetMs = options.frameBudgetMs ?? DEFAULT_FRAME_BUDGET_MS
+  const frameBudgetMs = options.frameBudgetMs ?? FRAME_BUDGET_MS
   const dirty = new Set<string>()
   const pending = new Set<string>()
 

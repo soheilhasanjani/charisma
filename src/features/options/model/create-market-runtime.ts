@@ -25,6 +25,7 @@ import { createSymbolStore } from '@/features/options/model/stores/symbol-store'
 import { createRiskEngine } from '@/features/options/risk/risk-engine'
 import type { RiskComputeMode } from '@/features/options/risk/types'
 import type { OptionSnapshot } from '@/features/options/types'
+import { env } from '@/lib/env'
 
 function readInitialComputeMode(): RiskComputeMode {
   if (typeof window === 'undefined') return 'viewport'
@@ -79,6 +80,7 @@ export function createMarketRuntime(options: MarketRuntimeOptions = {}) {
   })
 
   const socket = createReconnectingSocket({
+    url: env.wsUrl,
     decode: decodeMarketMessageFromJson,
     onMessage: (message) => controller.handleMessage(message),
     onStatusChange: (status) => controller.updateTransportStatus(status),

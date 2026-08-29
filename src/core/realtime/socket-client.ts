@@ -8,9 +8,11 @@ import {
   BACKOFF_CAP_MS,
   HIDDEN_TAB_GRACE_MS,
   MAX_RECONNECT_ATTEMPTS,
-  resolveWebSocketUrl,
   STALE_DEAD_MS,
   STALE_WARN_MS,
+  WATCHDOG_CLOSE_CODE,
+  WATCHDOG_POLL_MS,
+  WS_OPTIONS_URL,
 } from '@/core/config/feed-config'
 
 export type TransportState = 'idle' | 'connecting' | 'open' | 'closed'
@@ -65,7 +67,7 @@ function defaultWebSocketFactory(url: string): WebSocket {
 export function createReconnectingSocket<T = unknown>(
   options: ReconnectingSocketOptions<T> = {},
 ): ReconnectingSocket {
-  const url = options.url ?? resolveWebSocketUrl()
+  const url = options.url ?? WS_OPTIONS_URL
   const createSocket = options.webSocketFactory ?? defaultWebSocketFactory
   const log = options.log ?? (() => undefined)
 
@@ -213,7 +215,7 @@ export function createReconnectingSocket<T = unknown>(
         { silentFor },
       )
       setStaleLevel('dead')
-      teardownSocket('watchdog', 4000)
+      teardownSocket('watchdog', WATCHDOG_CLOSE_CODE)
       scheduleReconnect('watchdog')
       return
     }
@@ -230,7 +232,7 @@ export function createReconnectingSocket<T = unknown>(
 
   function startWatchdog() {
     clearWatchdog()
-    watchdogTimer = setInterval(runWatchdog, 1_000)
+    watchdogTimer = setInterval(runWatchdog, WATCHDOG_POLL_MS)
   }
 
   function sendIfOpen(data: string) {

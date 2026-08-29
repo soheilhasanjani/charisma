@@ -29,6 +29,18 @@ export const HIDDEN_TAB_GRACE_MS = 30_000
  */
 export const SERVER_STATUS_TTL_MS = 10_000
 
+/** How often the liveness watchdog samples silence. */
+export const WATCHDOG_POLL_MS = 1_000
+
+/** Private-use close code for a watchdog-forced teardown (RFC 6455 4000–4999). */
+export const WATCHDOG_CLOSE_CODE = 4000
+
+/**
+ * Flush budget inside a 16.7ms frame. Headroom for layout and React after
+ * `onFlush` (risk + listener notify).
+ */
+export const FRAME_BUDGET_MS = 12
+
 export const WS_OPTIONS_PATH = '/ws/options'
 
 /**
@@ -38,11 +50,7 @@ export const WS_OPTIONS_PATH = '/ws/options'
  * MSW matches the *whole* URL, host and port included. Deriving the origin from
  * `window.location` yields `ws://localhost:5173/ws/options` in dev, which matches
  * no handler, so every message is silently lost while the socket appears healthy.
- * Point `VITE_WS_URL` at a real gateway to override.
+ * Point `VITE_WS_URL` at a real gateway to override — see `env.wsUrl` in
+ * src/lib/env.ts.
  */
 export const WS_OPTIONS_URL = `ws://localhost${WS_OPTIONS_PATH}`
-
-export function resolveWebSocketUrl(): string {
-  const configured = import.meta.env.VITE_WS_URL?.trim()
-  return configured ? configured : WS_OPTIONS_URL
-}

@@ -114,9 +114,12 @@ per-key notification.
 
 ### Change a tuning value
 
-Backoff, staleness thresholds, hidden-tab grace and the server-status TTL all live
-in [feed-config.ts](./src/core/config/feed-config.ts), each with a comment saying
-what it was derived from. Change them there, not at the call site.
+Backoff, staleness thresholds, hidden-tab grace, the server-status TTL, watchdog
+poll interval, watchdog close code, and the frame budget all live in
+[feed-config.ts](./src/core/config/feed-config.ts), each with a comment saying
+what it was derived from. Change them there, not at the call site. The WebSocket
+URL override is `VITE_WS_URL` via [lib/env.ts](./src/lib/env.ts); the default
+mock address stays `WS_OPTIONS_URL` in feed-config.
 
 ## Testing
 
