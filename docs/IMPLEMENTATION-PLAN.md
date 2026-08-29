@@ -1,8 +1,23 @@
 # Implementation Plan — Real-Time Options Terminal
 
-> **Status:** Phase 7 complete; Phase 8+ not started.
-> **Purpose:** this is the working engineering plan for the task described in [TASK.md](./TASK.md). It records _what_ will be built, in _what order_, and _why_ each significant decision was taken. It is the source material for `ARCHITECTURE.md` (Persian) and `ARCHITECTURE.en.md`, which are the graded deliverables; the decisions listed here become numbered ADRs under `docs/adr/`.
-> **Audience:** the reviewer, and whoever inherits this codebase next.
+> **Status: historical — superseded by the shipped documentation.**
+>
+> This is the plan written before implementation, kept because the delivery phases
+> and the reasoning behind them are part of how the project was built. It is **not**
+> a current description of the system, and parts of it were revised while building.
+>
+> For the system as it stands, read:
+>
+> - [../ARCHITECTURE.md](../ARCHITECTURE.md) — the design, with measured numbers
+> - [adr/](./adr/) — decisions, each with its rejected alternatives
+> - [../CONTRIBUTING.md](../CONTRIBUTING.md) — reading tour and recipes
+>
+> Notable revisions after this was written: the worker pool became a single worker;
+> `@tanstack/react-table` was removed outright rather than kept for column
+> definitions, on the strength of a bundle measurement; and zustand was restored for
+> low-frequency state after this plan's loose wording led to it being deleted
+> wholesale. See [adr/0002](./adr/0002-store-boundary.md) and
+> [adr/0005](./adr/0005-no-table-library.md).
 
 ## Contents
 
