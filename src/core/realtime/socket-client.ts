@@ -1,6 +1,6 @@
 /**
  * Reconnecting WebSocket client — liveness watchdog, jittered backoff, lifecycle hooks.
- * React-free; assembled into createMarketRuntime() in Phase 2.
+ * Protocol-free: inject `decode` for inbound frames and `send` opaque outbound text.
  */
 
 import {
@@ -12,11 +12,6 @@ import {
   STALE_DEAD_MS,
   STALE_WARN_MS,
 } from '@/core/config/feed-config'
-import {
-  decodeMarketMessageFromJson,
-  encodeSubscribeMessage,
-  type InboundMarketMessage,
-} from '@/core/realtime/protocol'
 
 export type TransportState = 'idle' | 'connecting' | 'open' | 'closed'
 
@@ -38,14 +33,13 @@ export interface FeedTransportStatus {
   awaitingManualRetry: boolean
   lastCloseReason: CloseReason | null
   lastMessageAt: number | null
-  subscribedSymbols: string[]
-  confirmedSymbols: string[]
 }
 
-export interface ReconnectingSocketOptions {
+export interface ReconnectingSocketOptions<T = unknown> {
   url?: string
   webSocketFactory?: (url: string) => WebSocket
-  onMessage?: (message: InboundMarketMessage) => void
+  decode?: (raw: string) => T | null
+  onMessage?: (message: T) => void
   onStatusChange?: (status: FeedTransportStatus) => void
   onResyncNeeded?: () => void
   log?: (message: string, detail?: unknown) => void
@@ -55,7 +49,7 @@ export interface ReconnectingSocket {
   start: () => void
   stop: () => void
   retry: () => void
-  subscribe: (symbols: string[]) => void
+  send: (data: string) => void
   getStatus: () => FeedTransportStatus
 }
 
@@ -68,8 +62,8 @@ function defaultWebSocketFactory(url: string): WebSocket {
   return new WebSocket(url)
 }
 
-export function createReconnectingSocket(
-  options: ReconnectingSocketOptions = {},
+export function createReconnectingSocket<T = unknown>(
+  options: ReconnectingSocketOptions<T> = {},
 ): ReconnectingSocket {
   const url = options.url ?? resolveWebSocketUrl()
   const createSocket = options.webSocketFactory ?? defaultWebSocketFactory
@@ -87,8 +81,7 @@ export function createReconnectingSocket(
   let openedAt: number | null = null
   let staleLevel: StaleLevel = 'awaiting'
   let transport: TransportState = 'idle'
-  let intendedSymbols: string[] = []
-  let confirmedSymbols: string[] = []
+  let lastOutbound: string | null = null
 
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null
   let watchdogTimer: ReturnType<typeof setInterval> | null = null
@@ -113,8 +106,6 @@ export function createReconnectingSocket(
       awaitingManualRetry,
       lastCloseReason,
       lastMessageAt,
-      subscribedSymbols: [...intendedSymbols],
-      confirmedSymbols: [...confirmedSymbols],
     }
   }
 
@@ -242,15 +233,15 @@ export function createReconnectingSocket(
     watchdogTimer = setInterval(runWatchdog, 1_000)
   }
 
-  function sendSubscribe(symbols: string[]) {
+  function sendIfOpen(data: string) {
     if (!socket || socket.readyState !== WebSocket.OPEN) return
-    socket.send(encodeSubscribeMessage(symbols))
-    log('subscribe sent', { symbols })
+    socket.send(data)
+    log('outbound sent')
   }
 
-  function flushSubscribe() {
-    if (intendedSymbols.length === 0) return
-    sendSubscribe(intendedSymbols)
+  function flushOutbound() {
+    if (lastOutbound == null) return
+    sendIfOpen(lastOutbound)
   }
 
   function scheduleReconnect(reason: CloseReason) {
@@ -333,22 +324,18 @@ export function createReconnectingSocket(
     setStaleLevel('awaiting')
     setTransport('open')
     startWatchdog()
-    flushSubscribe()
+    flushOutbound()
     log('socket open')
   }
 
   function handleMessage(event: MessageEvent) {
-    const decoded = decodeMarketMessageFromJson(String(event.data))
-    if (!decoded) return
+    if (typeof event.data !== 'string') return
+
+    const decoded = options.decode?.(event.data)
+    if (decoded == null) return
 
     touchWatchdog()
     resetBackoffOnData()
-
-    if (decoded.type === 'subscribed') {
-      confirmedSymbols = decoded.symbols
-      emitStatus()
-    }
-
     options.onMessage?.(decoded)
   }
 
@@ -471,10 +458,9 @@ export function createReconnectingSocket(
       connect()
     },
 
-    subscribe(symbols) {
-      intendedSymbols = [...symbols]
-      emitStatus()
-      flushSubscribe()
+    send(data) {
+      lastOutbound = data
+      sendIfOpen(data)
     },
 
     getStatus() {

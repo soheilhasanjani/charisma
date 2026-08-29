@@ -7,6 +7,10 @@
  * pipeline. Nothing in here touches React.
  */
 
+import {
+  decodeMarketMessageFromJson,
+  encodeSubscribeMessage,
+} from '@/core/realtime/protocol'
 import { createReconnectingSocket } from '@/core/realtime/socket-client'
 import { createFrameScheduler } from '@/core/scheduler/frame-scheduler'
 import { createMarketController } from '@/features/options/model/market-controller'
@@ -75,6 +79,7 @@ export function createMarketRuntime(options: MarketRuntimeOptions = {}) {
   })
 
   const socket = createReconnectingSocket({
+    decode: decodeMarketMessageFromJson,
     onMessage: (message) => controller.handleMessage(message),
     onStatusChange: (status) => controller.updateTransportStatus(status),
     onResyncNeeded: () => {
@@ -135,7 +140,8 @@ export function createMarketRuntime(options: MarketRuntimeOptions = {}) {
      * `selection.confirmed` has exactly one writer, the `subscribed` ack.
      */
     requestSubscription(symbols: string[]) {
-      socket.subscribe(symbols)
+      if (symbols.length === 0) return
+      socket.send(encodeSubscribeMessage(symbols))
     },
 
     setViewportSymbols(symbols: string[]) {

@@ -30,7 +30,9 @@ is under 500 lines.
    description of the wire format, types and decoders together. A protocol change
    starts and ends here.
 4. **[src/core/realtime/socket-client.ts](./src/core/realtime/socket-client.ts)** —
-   reconnection, the liveness watchdog, and page/device lifecycle. Read
+   reconnection, the liveness watchdog, and page/device lifecycle. It does not
+   import the wire protocol; `createMarketRuntime` injects `decode` and sends
+   opaque frames. Read
    [ADR 0004](./docs/adr/0004-liveness-over-connection-state.md) alongside it.
 5. **[src/features/options/model/create-market-runtime.ts](./src/features/options/model/create-market-runtime.ts)** —
    where socket, controller, stores, scheduler and risk engine are assembled. The

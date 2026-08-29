@@ -5,6 +5,10 @@ import {
   STALE_DEAD_MS,
   STALE_WARN_MS,
 } from '@/core/config/feed-config'
+import {
+  decodeMarketMessageFromJson,
+  encodeSubscribeMessage,
+} from '@/core/realtime/protocol'
 import { createReconnectingSocket } from '@/core/realtime/socket-client'
 import { FakeWebSocket, installFakeWebSocket } from '@/test/fake-websocket'
 
@@ -36,6 +40,7 @@ describe('createReconnectingSocket', () => {
 
     const feed = createReconnectingSocket({
       url: 'ws://localhost/ws/options',
+      decode: decodeMarketMessageFromJson,
       webSocketFactory: (url) => {
         socket = new FakeWebSocket(url, { openImmediately: true })
         return socket as unknown as WebSocket
@@ -83,6 +88,7 @@ describe('createReconnectingSocket', () => {
     let socket!: FakeWebSocket
     const feed = createReconnectingSocket({
       url: 'ws://localhost/ws/options',
+      decode: decodeMarketMessageFromJson,
       webSocketFactory: (url) => {
         socket = new FakeWebSocket(url, { openImmediately: true })
         return socket as unknown as WebSocket
@@ -114,6 +120,7 @@ describe('createReconnectingSocket', () => {
 
     const feed = createReconnectingSocket({
       url: 'ws://localhost/ws/options',
+      decode: decodeMarketMessageFromJson,
       webSocketFactory: (url) => {
         socket = new FakeWebSocket(url, { openImmediately: true })
         return socket as unknown as WebSocket
@@ -147,6 +154,7 @@ describe('createReconnectingSocket', () => {
     let socket!: FakeWebSocket
     const feed = createReconnectingSocket({
       url: 'ws://localhost/ws/options',
+      decode: decodeMarketMessageFromJson,
       webSocketFactory: (url) => {
         socket = new FakeWebSocket(url, { openImmediately: true })
         return socket as unknown as WebSocket
@@ -178,6 +186,7 @@ describe('createReconnectingSocket', () => {
     let socket!: FakeWebSocket
     const feed = createReconnectingSocket({
       url: 'ws://localhost/ws/options',
+      decode: decodeMarketMessageFromJson,
       webSocketFactory: (url) => {
         socket = new FakeWebSocket(url, { openImmediately: true })
         return socket as unknown as WebSocket
@@ -207,6 +216,7 @@ describe('createReconnectingSocket', () => {
     const logs: string[] = []
     const feed = createReconnectingSocket({
       url: 'ws://localhost/ws/options',
+      decode: decodeMarketMessageFromJson,
       webSocketFactory: (url) =>
         new FakeWebSocket(url, {
           openImmediately: true,
@@ -229,6 +239,70 @@ describe('createReconnectingSocket', () => {
     expect(feed.getStatus().lastCloseReason).toBe('watchdog')
     expect(feed.getStatus().transport).toBe('closed')
 
+    feed.stop()
+  })
+
+  it('does not treat a malformed frame as liveness', () => {
+    let socket!: FakeWebSocket
+    const feed = createReconnectingSocket({
+      url: 'ws://localhost/ws/options',
+      decode: decodeMarketMessageFromJson,
+      webSocketFactory: (url) => {
+        socket = new FakeWebSocket(url, { openImmediately: true })
+        return socket as unknown as WebSocket
+      },
+    })
+
+    feed.start()
+    socket.receive('{not json')
+    socket.receive(JSON.stringify({ type: 'unknown' }))
+
+    expect(feed.getStatus().lastMessageAt).toBeNull()
+    expect(feed.getStatus().staleLevel).toBe('awaiting')
+
+    feed.stop()
+  })
+
+  it('sends an outbound frame while the socket is open', () => {
+    const sent: string[] = []
+    const payload = encodeSubscribeMessage(['AAPL_20250117_190_C'])
+    const feed = createReconnectingSocket({
+      url: 'ws://localhost/ws/options',
+      decode: decodeMarketMessageFromJson,
+      webSocketFactory: (url) => {
+        const socket = new FakeWebSocket(url, { openImmediately: true })
+        socket.onSend = (data) => sent.push(data)
+        return socket as unknown as WebSocket
+      },
+    })
+
+    feed.start()
+    feed.send(payload)
+
+    expect(sent).toEqual([payload])
+    feed.stop()
+  })
+
+  it('replays the last outbound frame when the socket reopens', () => {
+    const sent: string[] = []
+    const payload = encodeSubscribeMessage(['AAPL_20250117_190_C'])
+    const feed = createReconnectingSocket({
+      url: 'ws://localhost/ws/options',
+      decode: decodeMarketMessageFromJson,
+      webSocketFactory: (url) => {
+        const socket = new FakeWebSocket(url, { openImmediately: true })
+        socket.onSend = (data) => sent.push(data)
+        return socket as unknown as WebSocket
+      },
+    })
+
+    feed.start()
+    feed.send(payload)
+    feed.stop()
+    sent.length = 0
+
+    feed.start()
+    expect(sent).toEqual([payload])
     feed.stop()
   })
 })

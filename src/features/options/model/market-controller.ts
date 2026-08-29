@@ -33,8 +33,6 @@ const INITIAL_TRANSPORT: FeedTransportStatus = {
   awaitingManualRetry: false,
   lastCloseReason: null,
   lastMessageAt: null,
-  subscribedSymbols: [],
-  confirmedSymbols: [],
 }
 
 export type MarketControllerDeps = {

@@ -13,8 +13,6 @@ function transport(
     awaitingManualRetry: false,
     lastCloseReason: null,
     lastMessageAt: 1,
-    subscribedSymbols: [],
-    confirmedSymbols: [],
     ...overrides,
   }
 }

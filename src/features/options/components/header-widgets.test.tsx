@@ -37,8 +37,6 @@ describe('FeedStatusBadge', () => {
         awaitingManualRetry: false,
         lastCloseReason: 'offline',
         lastMessageAt: null,
-        subscribedSymbols: [],
-        confirmedSymbols: [],
       })
     })
 
@@ -52,8 +50,6 @@ describe('FeedStatusBadge', () => {
         awaitingManualRetry: false,
         lastCloseReason: 'watchdog',
         lastMessageAt: null,
-        subscribedSymbols: [],
-        confirmedSymbols: [],
       })
     })
 
