@@ -55,6 +55,58 @@ describe('FeedStatusBadge', () => {
 
     expect(screen.getByText(fa.feed.watchdog)).toBeInTheDocument()
   })
+
+  it('clears a server disconnect claim once later market data arrives', async () => {
+    let socket!: FakeWebSocket
+    const runtime = createMarketRuntime({
+      webSocketFactory: (url) => {
+        socket = new FakeWebSocket(url, { openImmediately: true })
+        return socket as unknown as WebSocket
+      },
+    })
+    runtime.start()
+    renderWithProviders(<FeedStatusBadge />, { runtime })
+
+    act(() => {
+      socket.receive(
+        JSON.stringify({
+          type: 'ticker',
+          symbol: 'AAPL_20250117_190_C',
+          last: 10,
+          bid: 9.9,
+          ask: 10.1,
+        }),
+      )
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(fa.feed.connected)).toBeInTheDocument()
+    })
+
+    act(() => {
+      socket.receive(JSON.stringify({ type: 'status', status: 'disconnected' }))
+    })
+    expect(screen.getByText(fa.feed.serverDisconnected)).toBeInTheDocument()
+
+    act(() => {
+      socket.receive(
+        JSON.stringify({
+          type: 'ticker',
+          symbol: 'AAPL_20250117_190_C',
+          last: 11,
+          bid: 10.9,
+          ask: 11.1,
+        }),
+      )
+    })
+
+    expect(screen.getByText(fa.feed.connected)).toBeInTheDocument()
+    expect(
+      screen.queryByText(fa.feed.serverDisconnected),
+    ).not.toBeInTheDocument()
+
+    runtime.stop()
+  })
 })
 
 describe('LastTradeBanner', () => {

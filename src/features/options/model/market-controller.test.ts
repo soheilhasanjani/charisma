@@ -98,6 +98,29 @@ describe('feed status derivation', () => {
     expect(stores.feedStatus.getState().authority).toBe('transport')
   })
 
+  it('expires a server disconnect claim when live data arrives without a transport status bump', () => {
+    const { controller, stores } = createTestMarket()
+
+    controller.updateTransportStatus(transport())
+    controller.handleMessage({ type: 'status', status: 'disconnected' })
+    expect(stores.feedStatus.getState().labelKey).toBe(
+      'feed.serverDisconnected',
+    )
+
+    // Production path: once staleLevel is already `fresh`, the socket does
+    // not re-emit lastMessageAt. The grid still updates from this ticker.
+    controller.handleMessage({
+      type: 'ticker',
+      symbol: 'AAPL_20250117_190_C',
+      last: 10,
+      bid: 9.9,
+      ask: 10.1,
+    })
+
+    expect(stores.feedStatus.getState().labelKey).toBe('feed.connected')
+    expect(stores.feedStatus.getState().authority).toBe('transport')
+  })
+
   it('prefers staleness over a server claim', () => {
     const { controller, stores } = createTestMarket()
 

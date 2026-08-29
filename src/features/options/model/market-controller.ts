@@ -66,6 +66,12 @@ export function createMarketController(deps: MarketControllerDeps) {
    * The mock reports `disconnected` at random while the socket is open and
    * delivering data, so a server claim is only honoured while it is still
    * plausible: recent, and not contradicted by a message that arrived after it.
+   *
+   * The socket only re-emits transport status when `staleLevel` or lifecycle
+   * changes. After the first tick the feed stays `fresh`, so later tickers
+   * never bump `lastMessageAt` on this snapshot. Live data must therefore
+   * re-run derivation itself, or the badge stays on server-disconnected
+   * while the grid and trade banner keep moving.
    */
   function effectiveServerStatus(now: number): ServerFeedStatus {
     const { serverStatus, serverStatusAt } = deps.feedStatusStore.getState()
@@ -83,6 +89,24 @@ export function createMarketController(deps: MarketControllerDeps) {
     }
 
     return serverStatus
+  }
+
+  /** Stamp lastMessageAt and republish while a disconnect claim is still showing. */
+  function expireServerClaimOnLiveData() {
+    const current = deps.feedStatusStore.getState()
+    if (current.labelKey !== 'feed.serverDisconnected') {
+      return
+    }
+
+    const receivedAt = Date.now()
+    transportStatus = {
+      ...transportStatus,
+      lastMessageAt:
+        current.serverStatusAt != null && receivedAt <= current.serverStatusAt
+          ? current.serverStatusAt + 1
+          : receivedAt,
+    }
+    publishFeedStatus()
   }
 
   function deriveLabelKey(serverStatus: ServerFeedStatus): FeedStatusLabelKey {
@@ -160,11 +184,13 @@ export function createMarketController(deps: MarketControllerDeps) {
             ask: message.ask,
           })
           scheduleSymbol(message.symbol)
+          expireServerClaimOnLiveData()
           break
 
         case 'greeks':
           deps.symbolStore.applyGreeks(message.symbol, message)
           scheduleSymbol(message.symbol)
+          expireServerClaimOnLiveData()
           break
 
         case 'trade': {
@@ -183,6 +209,7 @@ export function createMarketController(deps: MarketControllerDeps) {
               },
             })
           }
+          expireServerClaimOnLiveData()
           break
         }
 
@@ -198,6 +225,7 @@ export function createMarketController(deps: MarketControllerDeps) {
           // The ack records what the server confirmed; it must never overwrite
           // what the user asked for.
           deps.selectionStore.setState({ confirmed: message.symbols })
+          expireServerClaimOnLiveData()
           break
       }
     },
