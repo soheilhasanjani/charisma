@@ -225,7 +225,7 @@ drives a real message end to end.
 ## 5. Reviewing this quickly
 
 - `npm install && npm run dev` → `http://localhost:5173`
-- `npm run verify` — typecheck, lint, format, knip, tests, build, and the check that
+- `npm run verify` — typecheck, lint, format, tests, build, and the check that
   dev tooling is absent from the production bundle
 - `npm run bench` — the numbers in section 3
 - `?perf=1` — performance HUD and the 5000-symbol load generator

@@ -167,7 +167,7 @@ flowchart TB
 ## ۵. راهنمای بررسی سریع
 
 - `npm install && npm run dev` → `http://localhost:5173`
-- `npm run verify` — typecheck، lint، format، knip، تست‌ها، build، و بررسی حذف ابزار dev از باندل production
+- `npm run verify` — typecheck، lint، format، تست‌ها، build، و بررسی حذف ابزار dev از باندل production
 - `npm run bench` — اعداد بخش ۳
 - `?perf=1` — HUD کارایی و مولد بار ۵۰۰۰ نماد
 - `?perf=1&risk=all` — سوئیچ به محاسبهٔ ریسک روی کل تابلو، برای دیدن افت

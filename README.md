@@ -41,12 +41,11 @@ backend to run.
 | Script            | What it does                                                         |
 | ----------------- | -------------------------------------------------------------------- |
 | `npm run dev`     | Dev server with mock API and WebSocket                               |
-| `npm run verify`  | typecheck, lint, format, knip, tests, build, dev-code-excluded check |
+| `npm run verify`  | typecheck, lint, format, tests, build, dev-code-excluded check       |
 | `npm run test`    | Unit and integration tests                                           |
 | `npm run bench`   | CPU benchmarks behind the architecture claims                        |
 | `npm run analyze` | Build with the bundle visualizer (`stats.html`)                      |
 | `npm run budget`  | Fail if the gzipped bundle regresses                                 |
-| `npm run knip`    | Report unused files, exports and dependencies                        |
 
 ## Dev tools
 
