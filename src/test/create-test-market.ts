@@ -10,7 +10,6 @@ import { createFrameScheduler } from '@/core/scheduler/frame-scheduler'
 import { createMarketController } from '@/features/options/model/market-controller'
 import {
   createFeedStatusStore,
-  createHistoryStore,
   createKnownSymbolsStore,
   createLastTradeStore,
   createSelectionStore,
@@ -18,17 +17,12 @@ import {
 import { createSymbolStore } from '@/features/options/model/stores/symbol-store'
 
 export type TestMarketOptions = {
-  /** Symbols treated as on-screen, which is what gates history recording. */
-  trackedSymbols?: Iterable<string>
   onFlush?: (keys: ReadonlySet<string>) => void
 }
 
 export function createTestMarket(options: TestMarketOptions = {}) {
-  const tracked = new Set(options.trackedSymbols ?? [])
-
   const symbolStore = createSymbolStore()
   const lastTradeStore = createLastTradeStore()
-  const historyStore = createHistoryStore()
   const feedStatusStore = createFeedStatusStore()
   const selectionStore = createSelectionStore()
   const knownSymbolsStore = createKnownSymbolsStore()
@@ -40,12 +34,10 @@ export function createTestMarket(options: TestMarketOptions = {}) {
   const controller = createMarketController({
     symbolStore,
     lastTradeStore,
-    historyStore,
     feedStatusStore,
     selectionStore,
     knownSymbolsStore,
     scheduler,
-    isSymbolTracked: (symbol) => tracked.has(symbol),
   })
 
   return {
@@ -54,13 +46,9 @@ export function createTestMarket(options: TestMarketOptions = {}) {
     stores: {
       symbol: symbolStore,
       lastTrade: lastTradeStore,
-      history: historyStore,
       feedStatus: feedStatusStore,
       selection: selectionStore,
       knownSymbols: knownSymbolsStore,
-    },
-    track(symbol: string) {
-      tracked.add(symbol)
     },
   }
 }

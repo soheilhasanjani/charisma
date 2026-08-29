@@ -1,6 +1,6 @@
 /**
  * Generic keyed entity store with per-key pub/sub and dirty-set flushing.
- * Owned by feature stores (SymbolStore, HistoryStore, etc.) via the same factory shape.
+ * Owned by feature stores (SymbolStore, etc.) via the same factory shape.
  */
 
 export type EntityStoreListener = () => void

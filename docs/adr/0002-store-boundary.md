@@ -26,7 +26,7 @@ a `createStore` from `zustand/vanilla`, so the model layer stays React-free, and
 components read them with `useStore`.
 
 **`createEntityStore`** owns only what is written on the tick path and keyed by
-symbol: `SymbolStore` and `HistoryStore`.
+symbol: `SymbolStore`.
 
 ## Consequences
 

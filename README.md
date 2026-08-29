@@ -26,8 +26,7 @@ backend to run.
 - **Multi-select symbol filter** — searchable, grouped by underlying, virtualized to
   stay smooth at thousands of options, and mirrored to the URL so a filtered view is
   shareable. Narrowing the filter sends a `subscribe` message to limit the feed.
-- **Row detail** — click a row or press Enter for live delta, gamma, theta and vega,
-  the risk score broken into its components, a price sparkline, and recent trades.
+- **Row detail** — click a row or press Enter for live delta, gamma, theta and vega.
 - **Last trade banner** — the newest trade, throttled for readability, with a pause
   control.
 - **Connection status** — derived from three signals (our transport state, the

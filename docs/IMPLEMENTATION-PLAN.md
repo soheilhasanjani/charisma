@@ -66,7 +66,6 @@ flowchart TB
     subgraph state [Stores - one per live section]
       Symbols["SymbolStore - Map + per-key listeners"]
       Trade["LastTradeStore"]
-      History["HistoryStore - ring buffers"]
       Status["FeedStatusStore"]
       Selection["SelectionStore"]
       Viewport["ViewportStore"]
@@ -85,7 +84,6 @@ flowchart TB
     Decode --> Controller
     Controller --> Symbols
     Controller --> Trade
-    Controller --> History
     Controller --> Status
     Controller -->|"mark dirty"| Sched
     Sched -->|"dirty ∩ visible"| Worker
@@ -134,7 +132,7 @@ The failure mode at 5000 msg/s isn't the network, it's calling into React 5000 t
 
 - **`onmessage` never touches React.** It decodes, writes into a mutable buffer, and marks the key dirty. Zero renders, zero allocations beyond the decoded value.
 - **Conflation per key per frame.** One rAF flush publishes the _latest_ value for each dirty key and discards everything in between. If a symbol ticked forty times in 16ms, thirty-nine of those values were never observable by a human or a screen — dropping them is correct behaviour, not a compromise. The HUD reports the conflation ratio so the mechanism is visible rather than asserted.
-- **Every queue is bounded, with a stated drop policy.** Per-symbol history is a fixed-capacity ring buffer that drops oldest. Status is a single slot. The trade banner is a single slot published on a readability throttle. Nothing in the system can grow without limit while a tab sits open overnight.
+- **Every queue is bounded, with a stated drop policy.** Status is a single slot. The trade banner is a single slot published on a readability throttle. Nothing in the system can grow without limit while a tab sits open overnight.
 - **Adaptive cadence.** If a flush overruns its frame budget the scheduler drops to every second or third frame rather than falling progressively further behind. If the dirty set is larger than the viewport can consume, visible symbols are published first and the remainder deferred to an idle pass.
 - **Instrumented, not assumed.** Messages received per second, conflation ratio, flushes per second, FPS, long-task count and worker round-trip latency all surface in the Phase 7 HUD.
 - **The next bottleneck, named but not built:** decoding is O(messages) and stays on the main thread. If it ever dominated, the move is to own the socket and the decoder inside a worker and post conflated batches to the main thread.
@@ -151,12 +149,11 @@ Each independently-updating piece of live data owns its own store, so its update
 
 - **`SymbolStore`** — per-symbol quote, greeks, risk score and flash direction. Highest frequency; keyed subscriptions so a tick reaches exactly one row.
 - **`LastTradeStore`** — a single slot for the banner, published on a readability throttle.
-- **`HistoryStore`** — per-symbol capped ring buffers of price samples and recent trades, recorded only for symbols in the viewport or in an open dialog, feeding the sparkline.
 - **`FeedStatusStore`** — the derived liveness state (transport state, server-reported status, staleness, and which of the three is currently authoritative). Low frequency.
 - **`SelectionStore`** — filter selection; user-frequency, and the source of the debounced diffed `subscribe`.
-- **`ViewportStore`** — the visible symbol range published by the virtualizer, consumed by the scheduler and the history recorder.
+- **`ViewportStore`** — the visible symbol range published by the virtualizer, consumed by the scheduler and the risk engine.
 
-All six come from the same factory and expose the same `subscribe`/`getSnapshot` pair with a matching hook, so the pattern is learned once and reused — which is also what makes "add a live-data store" a four-step recipe in `CONTRIBUTING.md`.
+These come from the same factory and expose the same `subscribe`/`getSnapshot` pair with a matching hook, so the pattern is learned once and reused — which is also what makes "add a live-data store" a four-step recipe in `CONTRIBUTING.md`.
 
 ---
 
@@ -294,14 +291,14 @@ _Exit criteria:_ the socket connects to the MSW mock, survives a devtools-simula
 
 **2a. Dependency diet.** Swap axios for a native `fetch` wrapper with `AbortSignal.timeout`, same public interface, keeping the good Persian error mapping in `src/lib/http/errors.ts`. Fix `package.json` dependency placement.
 
-**2b. Runtime and stores.** `createMarketRuntime()` assembles the socket, the `MarketController` that translates decoded messages into store writes plus dirty marks, and the six stores described above. Records carry per-field revision stamps so the snapshot fills gaps without clobbering fresher live values — the race described earlier. Snapshot seeding also reconciles the duplicate stale-time policies between `src/lib/query/query-client.ts` and the snapshot query, and the same path serves the gap resync triggered on tab resume or reconnection. The `ranking` module produces a stable ordered `symbol[]` on a throttle, holding order steady while the pointer is over the grid or a scroll is in flight.
+**2b. Runtime and stores.** `createMarketRuntime()` assembles the socket, the `MarketController` that translates decoded messages into store writes plus dirty marks, and the stores described above. Records carry per-field revision stamps so the snapshot fills gaps without clobbering fresher live values — the race described earlier. Snapshot seeding also reconciles the duplicate stale-time policies between `src/lib/query/query-client.ts` and the snapshot query, and the same path serves the gap resync triggered on tab resume or reconnection. The `ranking` module produces a stable ordered `symbol[]` on a throttle, holding order steady while the pointer is over the grid or a scroll is in flight.
 
 _Exit criteria:_ live data flows into the stores and can be read for any symbol; a snapshot resolving _after_ live ticks provably does not regress prices; a simulated gap triggers a resync; the existing table still renders.
 
 **Done (Phase 2):**
 
 - **2a:** axios removed; native `fetch` wrapper with `AbortSignal.timeout` / `AbortSignal.any`; Persian error mapping preserved in `errors.ts`.
-- **2b:** `createMarketRuntime()` wires socket, scheduler, `MarketController`, and six stores (`symbol`, `lastTrade`, `history`, `feedStatus`, `selection`, `viewport`).
+- **2b:** `createMarketRuntime()` wires socket, scheduler, `MarketController`, and stores (`symbol`, `lastTrade`, `feedStatus`, `selection`, `viewport`).
 - Per-field revision stamps (`SNAPSHOT_REVISION = 0`, live ≥ 1) with fill-not-clobber in `snapshot-reconcile.ts`.
 - `MarketRuntimeProvider` + `useSnapshotSeed` — one `useEffect` starts/stops runtime; snapshot seeds stores; `onResyncNeeded` refetches on gap.
 - `ranking` module with throttled reorder and order-lock hook for Phase 4 sorting.
@@ -348,7 +345,7 @@ _Exit criteria:_ live-updating rows with a Risk Score column, sorting that doesn
 
 **5b. Header widgets.** Feed status badge pinned physically left even under RTL as the brief requires, showing the derived liveness state and distinguishing three different situations that all look like "disconnected" to a naive client: the server reporting disconnection while data still flows, the watchdog killing a silent socket, and the device genuinely being offline. Last-trade banner publishing at a readable throttle with buy/sell treatment, a pause control, and a live region that won't spam screen readers.
 
-**5c. Row detail dialog.** Clicking a row — or pressing Enter on it — opens `src/components/primitives/dialog.tsx` in its own lazy chunk, showing that symbol's live delta, gamma, theta and vega, the risk score broken into its greeks/spread/omega components, a sparkline from the `HistoryStore` ring buffer, and recent trades. It subscribes to one symbol only, so an open dialog costs one extra listener. Focus returns to the originating row, with a fallback target for when virtualization has unmounted it.
+**5c. Row detail dialog.** Clicking a row — or pressing Enter on it — opens `src/components/primitives/dialog.tsx` in its own lazy chunk, showing that symbol's live delta, gamma, theta and vega. It subscribes to one symbol only, so an open dialog costs one extra listener. Focus returns to the originating row, with a fallback target for when virtualization has unmounted it.
 
 _Exit criteria:_ all seven functional deliverables from the brief are visibly working.
 
@@ -356,7 +353,7 @@ _Exit criteria:_ all seven functional deliverables from the brief are visibly wo
 
 - **5a:** `SymbolFilter` — Base UI Combobox shell, lazy `symbol-filter-panel` with virtualized grouped list, select-all-in-group, search, overflow chips, clear-all, URL `?filter=` persistence, debounced diffed `runtime.subscribe()`.
 - **5b:** `FeedStatusBadge` pinned physically left in header; `LastTradeBanner` with buy/sell treatment, pause control, throttled live region.
-- **5c:** Lazy `SymbolDetailDialog` — live Greeks, risk breakdown (greeks/spread/omega), price sparkline, recent trades; row click / Enter opens; focus returns to originating row.
+- **5c:** Lazy `SymbolDetailDialog` — live delta, gamma, theta and vega; row click / Enter opens; focus returns to originating row.
 
 ## Phase 6 — i18n and refactors
 

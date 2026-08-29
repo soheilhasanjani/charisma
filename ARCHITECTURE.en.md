@@ -41,7 +41,6 @@ flowchart TB
     subgraph state [Stores - one per live section]
       Symbols["SymbolStore - Map + per-key listeners"]
       Trade["LastTradeStore"]
-      History["HistoryStore - ring buffers"]
       Status["FeedStatusStore"]
       Selection["SelectionStore"]
       Viewport["ViewportStore"]
@@ -60,7 +59,6 @@ flowchart TB
     Decode --> Controller
     Controller --> Symbols
     Controller --> Trade
-    Controller --> History
     Controller --> Status
     Controller -->|"mark dirty"| Sched
     Sched -->|"dirty ∩ visible"| Worker
@@ -148,8 +146,7 @@ some are open questions.
   ticked forty times in 16 ms, thirty-nine of those values were never observable —
   dropping them is correct behaviour, not a compromise. The HUD reports the
   conflation ratio so the claim is visible.
-- **What can grow without bound?** Nothing. Per-symbol history is a fixed-capacity
-  ring buffer (120 prices, 20 trades) that drops oldest; status is a single slot;
+- **What can grow without bound?** Nothing. Status is a single slot;
   the last-trade banner is a single slot on a readability throttle. A tab left open
   overnight does not accumulate memory.
 - **What if a frame overruns?** The scheduler drops to flushing every second or

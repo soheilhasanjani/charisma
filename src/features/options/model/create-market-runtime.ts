@@ -13,7 +13,6 @@ import { createMarketController } from '@/features/options/model/market-controll
 import { createRanking } from '@/features/options/model/ranking'
 import {
   createFeedStatusStore,
-  createHistoryStore,
   createKnownSymbolsStore,
   createLastTradeStore,
   createSelectionStore,
@@ -44,7 +43,6 @@ export function createMarketRuntime(options: MarketRuntimeOptions = {}) {
 
   const symbolStore = createSymbolStore()
   const lastTradeStore = createLastTradeStore()
-  const historyStore = createHistoryStore()
   const feedStatusStore = createFeedStatusStore()
   const selectionStore = createSelectionStore()
   const viewportStore = createViewportStore()
@@ -81,12 +79,10 @@ export function createMarketRuntime(options: MarketRuntimeOptions = {}) {
   const controller = createMarketController({
     symbolStore,
     lastTradeStore,
-    historyStore,
     feedStatusStore,
     selectionStore,
     knownSymbolsStore,
     scheduler,
-    isSymbolTracked: (symbol) => viewportStore.getState().visible.has(symbol),
   })
 
   const ranking = createRanking({
@@ -126,7 +122,6 @@ export function createMarketRuntime(options: MarketRuntimeOptions = {}) {
     stores: {
       symbol: symbolStore,
       lastTrade: lastTradeStore,
-      history: historyStore,
       feedStatus: feedStatusStore,
       selection: selectionStore,
       viewport: viewportStore,

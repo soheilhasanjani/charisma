@@ -28,19 +28,6 @@ export type LastTradeRecord = {
   receivedAt: number
 }
 
-export type HistoryTrade = {
-  price: number
-  size: number
-  side: 'buy' | 'sell'
-  time: string
-  receivedAt: number
-}
-
-export type SymbolHistory = {
-  prices: number[]
-  trades: HistoryTrade[]
-}
-
 export type FeedAuthority = 'transport' | 'server' | 'staleness'
 
 export type FeedStatusLabelKey =

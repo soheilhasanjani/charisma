@@ -12,7 +12,6 @@ import type { FrameScheduler } from '@/core/scheduler/frame-scheduler'
 import { reconcileSnapshotRow } from '@/features/options/model/snapshot-reconcile'
 import type {
   FeedStatusStore,
-  HistoryStore,
   KnownSymbolsStore,
   LastTradeStore,
   SelectionStore,
@@ -41,12 +40,10 @@ const INITIAL_TRANSPORT: FeedTransportStatus = {
 export type MarketControllerDeps = {
   symbolStore: SymbolStore
   lastTradeStore: LastTradeStore
-  historyStore: HistoryStore
   feedStatusStore: FeedStatusStore
   selectionStore: SelectionStore
   knownSymbolsStore: KnownSymbolsStore
   scheduler: FrameScheduler
-  isSymbolTracked?: (symbol: string) => boolean
 }
 
 export function createMarketController(deps: MarketControllerDeps) {
@@ -146,10 +143,6 @@ export function createMarketController(deps: MarketControllerDeps) {
     })
   }
 
-  function shouldTrackHistory(symbol: string) {
-    return deps.isSymbolTracked?.(symbol) ?? false
-  }
-
   return {
     handleMessage(message: InboundMarketMessage) {
       switch (message.type) {
@@ -159,10 +152,6 @@ export function createMarketController(deps: MarketControllerDeps) {
             bid: message.bid,
             ask: message.ask,
           })
-          if (shouldTrackHistory(message.symbol)) {
-            deps.historyStore.recordPrice(message.symbol, message.last)
-            deps.historyStore.flushKey(message.symbol)
-          }
           markSymbolDirty(message.symbol)
           break
 
@@ -178,17 +167,6 @@ export function createMarketController(deps: MarketControllerDeps) {
             lastTradeSide: message.side,
           }))
           markSymbolDirty(message.symbol)
-
-          if (shouldTrackHistory(message.symbol)) {
-            deps.historyStore.recordTrade(message.symbol, {
-              price: message.price,
-              size: message.size,
-              side: message.side,
-              time: message.time,
-              receivedAt,
-            })
-            deps.historyStore.flushKey(message.symbol)
-          }
 
           if (receivedAt - lastTradePublishedAt >= LAST_TRADE_THROTTLE_MS) {
             lastTradePublishedAt = receivedAt

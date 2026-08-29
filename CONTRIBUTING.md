@@ -56,7 +56,7 @@ Two store idioms, and the boundary is update frequency
 ([ADR 0002](./docs/adr/0002-store-boundary.md)):
 
 - **Changes on the tick path, keyed by symbol** → `createEntityStore`. Currently
-  `SymbolStore` and `HistoryStore`.
+  `SymbolStore`.
 - **Changes at user or connection speed** → zustand, in
   [live-stores.ts](./src/features/options/model/stores/live-stores.ts).
 
