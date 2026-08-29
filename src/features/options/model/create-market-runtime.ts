@@ -35,6 +35,8 @@ export type MarketRuntimeOptions = {
   fetchSnapshot?: () => Promise<OptionSnapshot[]>
   log?: (message: string, detail?: unknown) => void
   riskComputeMode?: RiskComputeMode
+  /** Lets tests drive the real pipeline over a fake transport. */
+  webSocketFactory?: (url: string) => WebSocket
 }
 
 export function createMarketRuntime(options: MarketRuntimeOptions = {}) {
@@ -101,6 +103,7 @@ export function createMarketRuntime(options: MarketRuntimeOptions = {}) {
     onResyncNeeded: () => {
       void resyncSnapshot()
     },
+    webSocketFactory: options.webSocketFactory,
     log,
   })
 

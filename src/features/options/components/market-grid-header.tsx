@@ -120,11 +120,17 @@ function MarketGridHeaderCell({
           >
             <CircleHelp className="size-3.5" aria-hidden="true" />
           </TooltipTrigger>
-          <TooltipContent id={descriptionId} side="bottom" className="max-w-xs">
+          <TooltipContent side="bottom" className="max-w-xs">
             {description}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
+
+      {/* The description target lives outside the tooltip so aria-describedby
+          still resolves while the tooltip is closed. */}
+      <span id={descriptionId} className="sr-only">
+        {description}
+      </span>
     </div>
   )
 }

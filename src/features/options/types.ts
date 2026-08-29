@@ -1,3 +1,7 @@
+/**
+ * A row exactly as `GET /api/options/snapshot` returns it. Risk score is not part
+ * of the payload — it is computed client-side and lives on SymbolRecord.
+ */
 export type OptionSnapshot = {
   symbol: string
   last: number
@@ -7,5 +11,4 @@ export type OptionSnapshot = {
   gamma: number
   theta: number
   vega: number
-  riskScore: number | null
 }

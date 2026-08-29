@@ -1,9 +1,6 @@
 import { createEntityStore } from '@/core/store/create-entity-store'
 import { stampLive } from '@/features/options/model/revisions'
-import {
-  createEmptySymbolRecord,
-  symbolRecordToSnapshot,
-} from '@/features/options/model/snapshot-reconcile'
+import { createEmptySymbolRecord } from '@/features/options/model/snapshot-reconcile'
 import type { SymbolRecord } from '@/features/options/model/types'
 import type { RiskScoreState } from '@/features/options/risk/types'
 
@@ -102,12 +99,6 @@ export function createSymbolStore() {
         ...record,
         riskScore,
       }))
-    },
-
-    toOptionSnapshot(symbol: string) {
-      const record = store.get(symbol)
-      if (!record) return null
-      return symbolRecordToSnapshot(record)
     },
   }
 }

@@ -29,18 +29,3 @@ export function reconcileSnapshotRow(
     stale: false,
   }
 }
-
-export function symbolRecordToSnapshot(record: SymbolRecord) {
-  return {
-    symbol: record.symbol,
-    last: record.last?.value ?? 0,
-    bid: record.bid?.value ?? 0,
-    ask: record.ask?.value ?? 0,
-    delta: record.delta?.value ?? 0,
-    gamma: record.gamma?.value ?? 0,
-    theta: record.theta?.value ?? 0,
-    vega: record.vega?.value ?? 0,
-    riskScore:
-      record.riskScore?.status === 'ready' ? record.riskScore.value : null,
-  }
-}

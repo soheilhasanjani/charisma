@@ -8,16 +8,27 @@ import {
 
 const MarketRuntimeContext = createContext<MarketRuntime | null>(null)
 
-export function MarketRuntimeProvider({ children }: { children: ReactNode }) {
-  const [runtime] = useState(() =>
-    createMarketRuntime({
-      fetchSnapshot: () => getOptionsSnapshot(),
-      log: import.meta.env.DEV
-        ? (message, detail) => {
-            console.log(`[market] ${message}`, detail ?? '')
-          }
-        : undefined,
-    }),
+type MarketRuntimeProviderProps = {
+  children: ReactNode
+  /** Supplied by tests to drive the real pipeline over a fake transport. */
+  runtime?: MarketRuntime
+}
+
+export function MarketRuntimeProvider({
+  children,
+  runtime: injected,
+}: MarketRuntimeProviderProps) {
+  const [runtime] = useState(
+    () =>
+      injected ??
+      createMarketRuntime({
+        fetchSnapshot: () => getOptionsSnapshot(),
+        log: import.meta.env.DEV
+          ? (message, detail) => {
+              console.log(`[market] ${message}`, detail ?? '')
+            }
+          : undefined,
+      }),
   )
 
   useEffect(() => {

@@ -19,7 +19,6 @@ const baseSnapshot: OptionSnapshot = {
   gamma: 0.1,
   theta: -0.02,
   vega: 1.2,
-  riskScore: null,
 }
 
 describe('reconcileSnapshotRow', () => {

@@ -281,7 +281,21 @@ export function createReconnectingSocket(
     hasReceivedDataSinceConnect = false
     setTransport('connecting')
 
-    const next = createSocket(url)
+    let next: WebSocket
+    try {
+      next = createSocket(url)
+    } catch (error) {
+      // Construction itself can fail on a malformed URL or under a restrictive
+      // CSP. Treat it as a failed attempt and back off rather than letting it
+      // propagate into whatever triggered the connect.
+      connectInFlight = false
+      lastCloseReason = 'failed'
+      setTransport('closed')
+      log('socket construction failed', error)
+      scheduleReconnect('failed')
+      return
+    }
+
     socket = next
     next.addEventListener('open', bound.handleOpen)
     next.addEventListener('message', bound.handleMessage)
