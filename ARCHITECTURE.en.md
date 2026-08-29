@@ -231,5 +231,4 @@ drives a real message end to end.
 - `?perf=1` — performance HUD and the 5000-symbol load generator
 - `?perf=1&risk=all` — switch to whole-book risk computation and watch it degrade
 - `?scan=1` — React Scan; one tick should light up exactly one row
-- Details: [docs/perf-measurements.md](./docs/perf-measurements.md) · Contributing:
-  [CONTRIBUTING.md](./CONTRIBUTING.md)
+- Details: [docs/perf-measurements.md](./docs/perf-measurements.md)

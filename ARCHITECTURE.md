@@ -172,4 +172,4 @@ flowchart TB
 - `?perf=1` — HUD کارایی و مولد بار ۵۰۰۰ نماد
 - `?perf=1&risk=all` — سوئیچ به محاسبهٔ ریسک روی کل تابلو، برای دیدن افت
 - `?scan=1` — React Scan؛ یک tick باید فقط یک ردیف را روشن کند
-- جزئیات: [docs/perf-measurements.md](./docs/perf-measurements.md) · مشارکت: [CONTRIBUTING.md](./CONTRIBUTING.md)
+- جزئیات: [docs/perf-measurements.md](./docs/perf-measurements.md)

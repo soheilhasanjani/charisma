@@ -79,9 +79,3 @@ Full write-up, with measured numbers and the questions raised by 5000×5000:
 
 React 19, TypeScript, Vite 7, Tailwind v4, Base UI, TanStack Query, TanStack
 Virtual, zustand, i18next, MSW, Vitest.
-
-## Contributing
-
-[CONTRIBUTING.md](./CONTRIBUTING.md) has a thirty-minute reading tour of the six
-files that matter, plus recipes for adding a column, a message type, a store or a
-locale.
