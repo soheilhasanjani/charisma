@@ -1,3 +1,7 @@
+import type {
+  ServerFeedStatus as WireServerFeedStatus,
+  TradeSide,
+} from '@/core/realtime/protocol'
 import type { Stamped } from '@/features/options/model/revisions'
 import type { RiskScoreState } from '@/features/options/risk/types'
 
@@ -21,7 +25,7 @@ export type LastTradeRecord = {
   symbol: string
   price: number
   size: number
-  side: 'buy' | 'sell'
+  side: TradeSide
   /** Opaque display string from the wire — not parsed. */
   time: string
   receivedAt: number
@@ -39,7 +43,7 @@ export type FeedStatusLabelKey =
   | 'feed.connected'
   | 'feed.disconnected'
 
-export type ServerFeedStatus = 'connected' | 'slow' | 'disconnected' | null
+export type ServerFeedStatus = WireServerFeedStatus | null
 
 export type FeedStatusRecord = {
   transport: 'idle' | 'connecting' | 'open' | 'closed'

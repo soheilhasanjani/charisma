@@ -21,7 +21,6 @@ export interface FrameSchedulerOptions {
 
 export interface FrameScheduler {
   markDirty: (key: string) => void
-  markMany: (keys: Iterable<string>) => void
   start: () => void
   stop: () => void
   flushNow: () => void
@@ -145,12 +144,6 @@ export function createFrameScheduler(
 
       dirty.add(key)
       schedule()
-    },
-
-    markMany(keys) {
-      for (const key of keys) {
-        this.markDirty(key)
-      }
     },
 
     start() {

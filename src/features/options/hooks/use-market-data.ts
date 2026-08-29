@@ -12,8 +12,8 @@ export function useSymbolRecord(symbol: string) {
 
   return useSyncExternalStore(
     (listener) => runtime.stores.symbol.subscribe(symbol, listener),
-    () => runtime.stores.symbol.getSnapshot(symbol),
-    () => runtime.stores.symbol.getSnapshot(symbol),
+    () => runtime.stores.symbol.get(symbol),
+    () => runtime.stores.symbol.get(symbol),
   )
 }
 

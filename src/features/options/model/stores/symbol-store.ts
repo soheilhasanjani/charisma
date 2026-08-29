@@ -7,23 +7,20 @@ import type { RiskScoreState } from '@/features/options/risk/types'
 export function createSymbolStore() {
   const store = createEntityStore<string, SymbolRecord>()
 
+  function upsert(
+    symbol: string,
+    updater: (current: SymbolRecord) => SymbolRecord,
+  ) {
+    const current = store.get(symbol) ?? createEmptySymbolRecord(symbol)
+    store.set(symbol, updater(current))
+  }
+
   return {
     get(symbol: string) {
       return store.get(symbol)
     },
 
-    getSnapshot(symbol: string) {
-      return store.get(symbol)
-    },
-
-    getAllSymbols() {
-      return [...store.keys()]
-    },
-
-    upsert(symbol: string, updater: (current: SymbolRecord) => SymbolRecord) {
-      const current = store.get(symbol) ?? createEmptySymbolRecord(symbol)
-      store.set(symbol, updater(current))
-    },
+    upsert,
 
     setRecord(symbol: string, record: SymbolRecord) {
       store.set(symbol, record)
@@ -37,23 +34,15 @@ export function createSymbolStore() {
       store.flushKeys(symbols)
     },
 
-    flush() {
-      return store.flush()
-    },
-
     subscribe(symbol: string, listener: () => void) {
       return store.subscribe(symbol, listener)
-    },
-
-    subscribeAll(listener: () => void) {
-      return store.subscribeAll(listener)
     },
 
     applyTicker(
       symbol: string,
       quote: { last: number; bid: number; ask: number },
     ) {
-      this.upsert(symbol, (record) => {
+      upsert(symbol, (record) => {
         const previousLast = record.last?.value
         let flashDirection = record.flashDirection
         if (previousLast != null && quote.last !== previousLast) {
@@ -80,7 +69,7 @@ export function createSymbolStore() {
         vega: number
       },
     ) {
-      this.upsert(symbol, (record) => ({
+      upsert(symbol, (record) => ({
         ...record,
         delta: stampLive(greeks.delta),
         gamma: stampLive(greeks.gamma),
@@ -91,7 +80,7 @@ export function createSymbolStore() {
     },
 
     applyRiskScore(symbol: string, riskScore: RiskScoreState) {
-      this.upsert(symbol, (record) => ({
+      upsert(symbol, (record) => ({
         ...record,
         riskScore,
       }))

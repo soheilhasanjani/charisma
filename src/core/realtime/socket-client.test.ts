@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   BACKOFF_BASE_MS,
+  MAX_RECONNECT_ATTEMPTS,
   STALE_DEAD_MS,
   STALE_WARN_MS,
 } from '@/core/config/feed-config'
@@ -303,6 +304,39 @@ describe('createReconnectingSocket', () => {
 
     feed.start()
     expect(sent).toEqual([payload])
+    feed.stop()
+  })
+
+  it('stops reconnecting after the attempt cap and resumes on retry', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0)
+
+    const sockets: FakeWebSocket[] = []
+    const feed = createReconnectingSocket({
+      url: 'ws://localhost/ws/options',
+      decode: decodeMarketMessageFromJson,
+      webSocketFactory: (url) => {
+        const socket = new FakeWebSocket(url, { openImmediately: true })
+        sockets.push(socket)
+        return socket as unknown as WebSocket
+      },
+    })
+
+    feed.start()
+
+    for (let attempt = 0; attempt <= MAX_RECONNECT_ATTEMPTS; attempt += 1) {
+      const current = sockets.at(-1)
+      expect(current).toBeDefined()
+      current?.close(1006, 'transport failure')
+      vi.runOnlyPendingTimers()
+    }
+
+    expect(feed.getStatus().awaitingManualRetry).toBe(true)
+    expect(feed.getStatus().transport).toBe('closed')
+
+    feed.retry()
+    expect(feed.getStatus().awaitingManualRetry).toBe(false)
+    expect(feed.getStatus().transport).toBe('open')
+
     feed.stop()
   })
 })
