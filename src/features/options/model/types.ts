@@ -43,7 +43,7 @@ export type ServerFeedStatus = 'connected' | 'slow' | 'disconnected' | null
 
 export type FeedStatusRecord = {
   transport: 'idle' | 'connecting' | 'open' | 'closed'
-  staleLevel: 'fresh' | 'slow' | 'dead'
+  staleLevel: 'awaiting' | 'fresh' | 'slow' | 'dead'
   serverStatus: ServerFeedStatus
   /** When the server last reported its status, so a stale claim can expire. */
   serverStatusAt: number | null

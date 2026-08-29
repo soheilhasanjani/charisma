@@ -29,7 +29,7 @@ export type CloseReason =
   | 'pagehide'
   | 'failed'
 
-export type StaleLevel = 'fresh' | 'slow' | 'dead'
+export type StaleLevel = 'awaiting' | 'fresh' | 'slow' | 'dead'
 
 export interface FeedTransportStatus {
   transport: TransportState
@@ -84,7 +84,8 @@ export function createReconnectingSocket(
   let hasReceivedDataSinceConnect = false
   let lastCloseReason: CloseReason | null = null
   let lastMessageAt: number | null = null
-  let staleLevel: StaleLevel = 'fresh'
+  let openedAt: number | null = null
+  let staleLevel: StaleLevel = 'awaiting'
   let transport: TransportState = 'idle'
   let intendedSymbols: string[] = []
   let confirmedSymbols: string[] = []
@@ -197,18 +198,29 @@ export function createReconnectingSocket(
     }
   }
 
+  /**
+   * Heartbeat seam: call only after a successfully decoded frame.
+   * TCP open is not liveness — that clock is `openedAt` in `runWatchdog`.
+   */
   function touchWatchdog() {
     lastMessageAt = Date.now()
     setStaleLevel('fresh')
   }
 
   function runWatchdog() {
-    if (lastMessageAt == null) return
+    const origin = lastMessageAt ?? openedAt
+    if (origin == null) return
 
-    const silentFor = Date.now() - lastMessageAt
+    const silentFor = Date.now() - origin
+    const awaitingFirstMessage = lastMessageAt == null
 
     if (silentFor >= STALE_DEAD_MS) {
-      log('watchdog: stale connection — forcing reconnect', { silentFor })
+      log(
+        awaitingFirstMessage
+          ? 'watchdog: no data since connect — forcing reconnect'
+          : 'watchdog: stale connection — forcing reconnect',
+        { silentFor },
+      )
       setStaleLevel('dead')
       teardownSocket('watchdog', 4000)
       scheduleReconnect('watchdog')
@@ -220,7 +232,9 @@ export function createReconnectingSocket(
       return
     }
 
-    setStaleLevel('fresh')
+    if (!awaitingFirstMessage) {
+      setStaleLevel('fresh')
+    }
   }
 
   function startWatchdog() {
@@ -309,9 +323,16 @@ export function createReconnectingSocket(
 
   function handleOpen() {
     connectInFlight = false
+    // The previous close is no longer the live failure. Leaving
+    // lastCloseReason as watchdog/offline would keep the badge on that
+    // error after a successful reopen (the controller prefers those
+    // reasons over transport === 'open').
+    lastCloseReason = null
+    lastMessageAt = null
+    openedAt = Date.now()
+    setStaleLevel('awaiting')
     setTransport('open')
     startWatchdog()
-    touchWatchdog()
     flushSubscribe()
     log('socket open')
   }

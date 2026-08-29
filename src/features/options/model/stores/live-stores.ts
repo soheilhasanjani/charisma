@@ -30,7 +30,7 @@ export function createLastTradeStore(): LastTradeStore {
 
 const INITIAL_FEED_STATUS: FeedStatusRecord = {
   transport: 'idle',
-  staleLevel: 'fresh',
+  staleLevel: 'awaiting',
   serverStatus: null,
   serverStatusAt: null,
   reconnectAttempt: 0,

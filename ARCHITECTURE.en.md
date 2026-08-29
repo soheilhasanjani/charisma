@@ -180,13 +180,13 @@ some are open questions.
 
 ## 4. Bottlenecks and mitigations
 
-| Bottleneck            | Why                                                          | Current mitigation                                                            | If that stops being enough                                            |
-| --------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| `riskCalculator`      | 500-iteration sin/cos loop; 40.43 ms for the whole book      | One worker + viewport scope + memo cache on unchanged inputs                  | Worker pool (a ten-line change); the numbers say it is not needed yet |
-| Successive re-renders | The naive React shape reconciles the whole table per message | Per-key subscription + rAF flush + virtualization + `memo` on cells           | Split the hottest cells out to field-level subscriptions              |
-| Main-thread decoding  | O(messages) and unavoidable                                  | Hand-written type guards; measured at 1.13 ms per second                      | Move socket + decoder into a worker and post conflated batches        |
-| GC pressure           | A new record object per tick                                 | Small immutable records; reused `Float64Array` buffer in the worker           | Columnar TypedArray storage instead of an object per symbol           |
-| DOM size              | 5000 rows = 50,000 cells                                     | Virtualization: only the visible window is mounted                            | —                                                                     |
+| Bottleneck            | Why                                                          | Current mitigation                                                  | If that stops being enough                                            |
+| --------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `riskCalculator`      | 500-iteration sin/cos loop; 40.43 ms for the whole book      | One worker + viewport scope + memo cache on unchanged inputs        | Worker pool (a ten-line change); the numbers say it is not needed yet |
+| Successive re-renders | The naive React shape reconciles the whole table per message | Per-key subscription + rAF flush + virtualization + `memo` on cells | Split the hottest cells out to field-level subscriptions              |
+| Main-thread decoding  | O(messages) and unavoidable                                  | Hand-written type guards; measured at 1.13 ms per second            | Move socket + decoder into a worker and post conflated batches        |
+| GC pressure           | A new record object per tick                                 | Small immutable records; reused `Float64Array` buffer in the worker | Columnar TypedArray storage instead of an object per symbol           |
+| DOM size              | 5000 rows = 50,000 cells                                     | Virtualization: only the visible window is mounted                  | —                                                                     |
 
 ### Known limitations and next steps
 
@@ -194,7 +194,7 @@ Honestly, what is unfinished or was not possible in this environment:
 
 - **No heartbeat.** The mock ignores unknown message types, so `ping`/`pong` and RTT
   measurement are impossible and staleness is the only liveness signal. The seam for
-  it is `touchWatchdog()` in `socket-client.ts`.
+  it is `touchWatchdog()` after a decoded frame, never on `open`.
 - **The in-browser HUD table is empty.** Left blank rather than filled with invented
   figures; the load-bearing claims sit in the bench table, which anyone can
   reproduce with `npm run bench`.

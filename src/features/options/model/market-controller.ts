@@ -28,7 +28,7 @@ const LAST_TRADE_THROTTLE_MS = 750
 
 const INITIAL_TRANSPORT: FeedTransportStatus = {
   transport: 'idle',
-  staleLevel: 'fresh',
+  staleLevel: 'awaiting',
   reconnectAttempt: 0,
   awaitingManualRetry: false,
   lastCloseReason: null,
@@ -95,6 +95,12 @@ export function createMarketController(deps: MarketControllerDeps) {
       return 'feed.manualRetry'
     }
     if (transportStatus.transport === 'connecting') {
+      return 'feed.connecting'
+    }
+    if (
+      transportStatus.transport === 'open' &&
+      transportStatus.staleLevel === 'awaiting'
+    ) {
       return 'feed.connecting'
     }
     if (transportStatus.staleLevel === 'slow') {

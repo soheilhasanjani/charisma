@@ -26,6 +26,7 @@ describe('createReconnectingSocket', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+    vi.restoreAllMocks()
     vi.unstubAllGlobals()
   })
 
@@ -44,6 +45,8 @@ describe('createReconnectingSocket', () => {
 
     feed.start()
     expect(feed.getStatus().transport).toBe('open')
+    expect(feed.getStatus().staleLevel).toBe('awaiting')
+    expect(feed.getStatus().lastMessageAt).toBeNull()
 
     feed.stop()
     feed.start()
@@ -104,6 +107,8 @@ describe('createReconnectingSocket', () => {
   })
 
   it('forces reconnect when the watchdog detects silence', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(1)
+
     let socket!: FakeWebSocket
     const logs: string[] = []
 
@@ -127,9 +132,102 @@ describe('createReconnectingSocket', () => {
     vi.advanceTimersByTime(STALE_WARN_MS + 500)
     expect(feed.getStatus().staleLevel).toBe('slow')
 
-    vi.advanceTimersByTime(STALE_DEAD_MS)
+    // Land on the dead tick without also firing the reconnect timer.
+    vi.advanceTimersByTime(STALE_DEAD_MS - (STALE_WARN_MS + 500))
     expect(logs.some((line) => line.includes('watchdog'))).toBe(true)
     expect(feed.getStatus().lastCloseReason).toBe('watchdog')
+    expect(feed.getStatus().transport).toBe('closed')
+
+    feed.stop()
+  })
+
+  it('clears lastCloseReason once the socket reopens after a watchdog kill', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(1)
+
+    let socket!: FakeWebSocket
+    const feed = createReconnectingSocket({
+      url: 'ws://localhost/ws/options',
+      webSocketFactory: (url) => {
+        socket = new FakeWebSocket(url, { openImmediately: true })
+        return socket as unknown as WebSocket
+      },
+    })
+
+    feed.start()
+    socket.receive(
+      JSON.stringify({
+        type: 'status',
+        status: 'connected',
+      }),
+    )
+
+    vi.advanceTimersByTime(STALE_DEAD_MS)
+    expect(feed.getStatus().lastCloseReason).toBe('watchdog')
+    expect(feed.getStatus().transport).toBe('closed')
+
+    vi.advanceTimersByTime(BACKOFF_BASE_MS)
+    expect(feed.getStatus().transport).toBe('open')
+    expect(feed.getStatus().lastCloseReason).toBeNull()
+    expect(feed.getStatus().staleLevel).toBe('awaiting')
+    expect(feed.getStatus().lastMessageAt).toBeNull()
+
+    feed.stop()
+  })
+
+  it('does not treat TCP open as data liveness', () => {
+    let socket!: FakeWebSocket
+    const feed = createReconnectingSocket({
+      url: 'ws://localhost/ws/options',
+      webSocketFactory: (url) => {
+        socket = new FakeWebSocket(url, { openImmediately: true })
+        return socket as unknown as WebSocket
+      },
+    })
+
+    feed.start()
+    expect(feed.getStatus().staleLevel).toBe('awaiting')
+    expect(feed.getStatus().lastMessageAt).toBeNull()
+
+    socket.receive(
+      JSON.stringify({
+        type: 'status',
+        status: 'connected',
+      }),
+    )
+
+    expect(feed.getStatus().staleLevel).toBe('fresh')
+    expect(feed.getStatus().lastMessageAt).not.toBeNull()
+
+    feed.stop()
+  })
+
+  it('kills a socket that opens but never delivers a decoded frame', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(1)
+
+    const logs: string[] = []
+    const feed = createReconnectingSocket({
+      url: 'ws://localhost/ws/options',
+      webSocketFactory: (url) =>
+        new FakeWebSocket(url, {
+          openImmediately: true,
+        }) as unknown as WebSocket,
+      log: (message) => logs.push(message),
+    })
+
+    feed.start()
+    expect(feed.getStatus().transport).toBe('open')
+    expect(feed.getStatus().lastMessageAt).toBeNull()
+
+    vi.advanceTimersByTime(STALE_WARN_MS + 500)
+    expect(feed.getStatus().staleLevel).toBe('slow')
+    expect(feed.getStatus().transport).toBe('open')
+
+    vi.advanceTimersByTime(STALE_DEAD_MS - (STALE_WARN_MS + 500))
+    expect(logs.some((line) => line.includes('no data since connect'))).toBe(
+      true,
+    )
+    expect(feed.getStatus().lastCloseReason).toBe('watchdog')
+    expect(feed.getStatus().transport).toBe('closed')
 
     feed.stop()
   })

@@ -18,10 +18,16 @@ _while the socket is open and delivering data_.
 ## Decision
 
 **Health is data arrival.** A watchdog resets on every successfully decoded
-message. `STALE_WARN_MS` (5 s) moves the badge to `slow`; `STALE_DEAD_MS` (12 s)
-declares the connection dead, tears it down and reconnects even though it still
-claims to be open. Both are derived from the mock's measured ~1.2 s cadence and
-live in `src/core/config/feed-config.ts` with that reasoning attached.
+message — never on TCP `open`. `touchWatchdog()` is the heartbeat seam; call it
+only after a decoded frame. `STALE_WARN_MS` (5 s) moves the badge to `slow`;
+`STALE_DEAD_MS` (12 s) declares the connection dead, tears it down and reconnects
+even though it still claims to be open.
+
+Two clocks share those thresholds: **silence since the last decoded message**,
+and **silence since TCP open before the first message**. Without the second
+clock, `lastMessageAt == null` would make `runWatchdog` return immediately and a
+mute open would live forever. Open itself sets `staleLevel` to `awaiting`, not
+`fresh`, so the UI does not report connected health before any data.
 
 **Backoff resets on data, not on open.** Delay is full jitter,
 `random(0, min(cap, base * 2^attempt))`, base 500 ms, cap 10 s. The attempt counter
@@ -46,7 +52,8 @@ TTL as a backstop.
   than sticking permanently as it did before the claim could expire.
 - No heartbeat is possible against this mock, so staleness is the only liveness
   signal available. A real server would get an application-level ping with RTT
-  measurement; the seam for it is `touchWatchdog()` in `socket-client.ts`.
+  measurement; the seam for it is `touchWatchdog()` after a decoded frame, never
+  on `open`.
 - After `MAX_RECONNECT_ATTEMPTS` the client stops and the badge offers a manual
   retry. Hammering a dead server forever is not resilience.
 

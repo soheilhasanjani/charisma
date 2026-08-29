@@ -3,10 +3,16 @@
  * Values derived from the MSW mock cadence (~1 message every 1.2s).
  */
 
-/** Mock emits roughly one message every 1.2s — warn after ~4 missed ticks. */
+/**
+ * Warn after ~4 missed ticks, or after this long with a socket that opened
+ * but never delivered a decoded frame. Same threshold for both clocks.
+ */
 export const STALE_WARN_MS = 5_000
 
-/** Declare dead and force reconnect after ~10 missed ticks. */
+/**
+ * Declare dead and force reconnect after ~10 missed ticks, or after this
+ * long with no first message since TCP open.
+ */
 export const STALE_DEAD_MS = 12_000
 
 export const BACKOFF_BASE_MS = 500

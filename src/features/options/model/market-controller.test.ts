@@ -12,7 +12,7 @@ function transport(
     reconnectAttempt: 0,
     awaitingManualRetry: false,
     lastCloseReason: null,
-    lastMessageAt: null,
+    lastMessageAt: 1,
     subscribedSymbols: [],
     confirmedSymbols: [],
     ...overrides,
@@ -24,7 +24,18 @@ describe('feed status derivation', () => {
     vi.useRealTimers()
   })
 
-  it('reports connected once the transport is open', () => {
+  it('reports connecting while the socket is open but no data has arrived', () => {
+    const { controller, stores } = createTestMarket()
+
+    controller.updateTransportStatus(
+      transport({ staleLevel: 'awaiting', lastMessageAt: null }),
+    )
+
+    expect(stores.feedStatus.getState().labelKey).toBe('feed.connecting')
+    expect(stores.feedStatus.getState().authority).toBe('transport')
+  })
+
+  it('reports connected once data has arrived', () => {
     const { controller, stores } = createTestMarket()
 
     controller.updateTransportStatus(transport())
