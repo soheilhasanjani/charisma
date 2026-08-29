@@ -67,7 +67,7 @@ mark keys dirty; one `requestAnimationFrame` loop notifies only the listeners of
 dirty keys; each row subscribes to its own symbol. Cost per message is O(1) in rows
 rather than O(rows).
 
-Full write-up, with measured numbers and the questions raised by 5000×5000:
+Full write-up:
 
 - [ARCHITECTURE.md](./ARCHITECTURE.md) (Persian)
 - [ARCHITECTURE.en.md](./ARCHITECTURE.en.md) (English)

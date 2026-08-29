@@ -51,7 +51,6 @@ Two specific guards:
 - **More unit tests.** Would not have caught it. The units were correct; the wiring
   between them was not.
 - **A full E2E suite (Playwright).** Would catch this and more, but it is a second
-  toolchain and a slower feedback loop than this task justifies. Worth adding if the
-  project grows; noted in ARCHITECTURE.md as a next step.
+  toolchain and a slower feedback loop than this task justifies.
 - **Mocking the runtime in component tests.** Fast, and it would have kept the bug
   invisible, since a mock would have been written against the intended behaviour.

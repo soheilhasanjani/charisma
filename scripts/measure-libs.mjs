@@ -1,6 +1,5 @@
 /**
  * Measures standalone gzip size of dependency entry points.
- * @tanstack/react-table was removed in Phase 4b — no libraries to measure currently.
  */
 import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'

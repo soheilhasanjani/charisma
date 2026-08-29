@@ -5,47 +5,40 @@
 
 ## Context
 
-The project started on `@tanstack/react-table` v9. Two things made it a poor fit.
+The grid shows thousands of symbols with live per-row updates. ADR 0001 means each
+row is a symbol string that subscribes to its own data — the parent never holds
+the book in React state. Filtering lives in the state layer. Header and body must
+share column widths and real grid semantics.
 
-Architecturally, its row models expect the full dataset in React state, which is
-exactly what ADR 0001 avoids: rows here are symbol strings and each subscribes to
-its own data, so filtering and sorting cannot live in a row model.
-
-Empirically, it cost 12.9 KiB gzipped against an 8 KiB budget
-(`docs/bundle-baseline.json`), for a feature set reduced to declaring columns.
-
-The original virtualized table also rendered header and body as two separate
-`<table>` elements with `flex-1` columns, so table semantics were already broken
-and alignment held only because every column happened to be equal width.
+A table library whose row model expects the full dataset in React state cannot
+drive that path. What we need from a table is column declarations and windowing.
 
 ## Decision
 
-Remove `@tanstack/react-table`. Keep `@tanstack/react-virtual`, which does one job
-well and has no equivalent problem.
+Own the columns. Virtualize the rows.
 
-Columns are declared in `src/features/options/components/column-model.ts`: a typed
-array carrying id, alignment, width and a description key. Filtering lives in the
-state layer; the grid receives symbol strings.
+Columns live in `src/features/options/components/column-model.ts`: a typed array
+of id, alignment, width, and a description key. The grid receives symbol strings;
+filtering is not a row-model concern.
 
-The grid is purpose-built from divs with `role="grid"`, `role="row"`,
-`role="columnheader"` and `role="gridcell"`, full aria indexing, and one
-`gridTemplateColumns` custom property shared by header and body so alignment is
-guaranteed by construction rather than by coincidence.
+Windowing is `@tanstack/react-virtual`. The markup is divs with `role="grid"`,
+`role="row"`, `role="columnheader"`, and `role="gridcell"`, with aria indexing.
+One `gridTemplateColumns` custom property is shared by header and body, so
+alignment is the same layout, not two tables hoping to match.
 
 ## Consequences
 
-- 12.9 KiB gzipped removed, and the remaining column model is a readable array.
-- Real grid semantics without a table library owning the render path.
-- A reviewer expecting TanStack Table has to read this ADR to see it was a decision.
-  That is the cost of the decision, and the measured number is the answer.
+- A ticker still reaches exactly one row (ADR 0001). The grid does not reintroduce
+  a parent render per message.
+- Column layout is a readable array, not a library config object.
+- Header and body stay aligned because they share one template.
 
 ## Alternatives rejected
 
-- **Keep it for column definitions only.** The bundle measurement decided it, and a
-  table library whose row model is bypassed invites "why is this here?" from every
-  reader.
-- **AG Grid or similar.** Solves virtualization and grid semantics properly, but it
-  is far larger than the whole current bundle and would own the render path this
-  task is specifically about controlling.
-- **Custom virtualization.** `@tanstack/react-virtual` is good and already present;
-  rewriting it would be effort with no upside.
+- **A row-model table library (TanStack Table, etc.).** Expects the book in React
+  state so it can filter and sort rows. That contradicts ADR 0001. For column
+  definitions alone it is not worth the dependency.
+- **AG Grid or similar.** Virtualization and grid semantics, but it would own the
+  render path this task is about controlling, and it is larger than the rest of
+  the bundle.
+- **Custom virtualization.** `@tanstack/react-virtual` already does that job.

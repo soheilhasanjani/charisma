@@ -26,10 +26,8 @@ flush notifies only the listeners of dirty keys. Rows consume their own key via
   Intermediate prices are dropped deliberately; they were never observable.
 - Row components cannot receive tick data as props, because that would reintroduce
   a parent render per message. Rows take a symbol string and subscribe themselves.
-- We own this code, including its bugs. One shipped already: global subscribers
-  were notified once per dirty key rather than once per flush, so a 500-symbol
-  flush re-ran every whole-store consumer 500 times. `flushKeys()` and a
-  regression test now cover it.
+- `flushKeys()` notifies global subscribers once per flush, not once per dirty
+  key, so a 500-symbol flush does not re-run whole-store consumers 500 times.
 
 ## Alternatives rejected
 
