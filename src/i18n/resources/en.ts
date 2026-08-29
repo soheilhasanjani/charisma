@@ -3,7 +3,6 @@ import type { FaTranslation } from '@/i18n/resources/fa'
 const en = {
   app: {
     brand: 'Options Market',
-    title: 'Options Market',
   },
   common: {
     retry: 'Retry',

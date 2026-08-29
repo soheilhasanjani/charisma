@@ -1,7 +1,6 @@
 const fa = {
   app: {
     brand: 'بازار آپشن',
-    title: 'بازار آپشن',
   },
   common: {
     retry: 'تلاش مجدد',

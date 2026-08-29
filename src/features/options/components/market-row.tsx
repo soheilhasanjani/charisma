@@ -105,7 +105,7 @@ const MarketGridCell = memo(function MarketGridCell({
         'flex min-w-0 items-center px-2',
         align === 'end' ? 'justify-end text-end' : 'justify-start text-start',
         sticky &&
-          'bg-background sticky [inset-inline-start:0] z-10 shadow-[1px_0_0_0_var(--border)]',
+          'bg-background sticky inset-s-0 z-10 shadow-[1px_0_0_0_var(--border)]',
       )}
     >
       <MarketCellContent columnId={columnId} symbol={symbol} record={record} />
@@ -127,7 +127,12 @@ function MarketCellContent({
   switch (columnId) {
     case 'ticker':
       return (
-        <span dir="ltr" lang="en" className="truncate font-medium" title={symbol}>
+        <span
+          dir="ltr"
+          lang="en"
+          className="truncate font-medium"
+          title={symbol}
+        >
           {symbol}
         </span>
       )
