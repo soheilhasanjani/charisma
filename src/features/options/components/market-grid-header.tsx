@@ -102,7 +102,5 @@ function MarketGridHeaderCell({
 }
 
 function alignmentClass(align: MarketColumnDef['align']) {
-  return align === 'end'
-    ? 'justify-end text-end'
-    : 'justify-start text-start'
+  return align === 'end' ? 'justify-end text-end' : 'justify-start text-start'
 }
