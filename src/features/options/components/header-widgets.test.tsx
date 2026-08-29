@@ -56,7 +56,7 @@ describe('FeedStatusBadge', () => {
     expect(screen.getByText(fa.feed.watchdog)).toBeInTheDocument()
   })
 
-  it('clears a server disconnect claim once later market data arrives', async () => {
+  it('shows slow from the server, but not disconnected while data is still flowing', async () => {
     let socket!: FakeWebSocket
     const runtime = createMarketRuntime({
       webSocketFactory: (url) => {
@@ -84,9 +84,9 @@ describe('FeedStatusBadge', () => {
     })
 
     act(() => {
-      socket.receive(JSON.stringify({ type: 'status', status: 'disconnected' }))
+      socket.receive(JSON.stringify({ type: 'status', status: 'slow' }))
     })
-    expect(screen.getByText(fa.feed.serverDisconnected)).toBeInTheDocument()
+    expect(screen.getByText(fa.feed.slow)).toBeInTheDocument()
 
     act(() => {
       socket.receive(
@@ -99,11 +99,23 @@ describe('FeedStatusBadge', () => {
         }),
       )
     })
+    expect(screen.getByText(fa.feed.slow)).toBeInTheDocument()
 
+    act(() => {
+      socket.receive(JSON.stringify({ type: 'status', status: 'disconnected' }))
+      socket.receive(
+        JSON.stringify({
+          type: 'trade',
+          symbol: 'AAPL_20250117_190_C',
+          price: 12,
+          size: 4,
+          side: 'buy',
+          time: '10:00:00',
+        }),
+      )
+    })
     expect(screen.getByText(fa.feed.connected)).toBeInTheDocument()
-    expect(
-      screen.queryByText(fa.feed.serverDisconnected),
-    ).not.toBeInTheDocument()
+    expect(screen.queryByText(fa.feed.disconnected)).not.toBeInTheDocument()
 
     runtime.stop()
   })

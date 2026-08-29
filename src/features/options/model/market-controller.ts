@@ -5,7 +5,6 @@
  * so a protocol change lands here and nowhere else.
  */
 
-import { SERVER_STATUS_TTL_MS } from '@/core/config/feed-config'
 import type { InboundMarketMessage } from '@/core/realtime/protocol'
 import type { FeedTransportStatus } from '@/core/realtime/socket-client'
 import type { FrameScheduler } from '@/core/scheduler/frame-scheduler'
@@ -62,53 +61,6 @@ export function createMarketController(deps: MarketControllerDeps) {
     deps.scheduler.markDirty(symbol)
   }
 
-  /**
-   * The mock reports `disconnected` at random while the socket is open and
-   * delivering data, so a server claim is only honoured while it is still
-   * plausible: recent, and not contradicted by a message that arrived after it.
-   *
-   * The socket only re-emits transport status when `staleLevel` or lifecycle
-   * changes. After the first tick the feed stays `fresh`, so later tickers
-   * never bump `lastMessageAt` on this snapshot. Live data must therefore
-   * re-run derivation itself, or the badge stays on server-disconnected
-   * while the grid and trade banner keep moving.
-   */
-  function effectiveServerStatus(now: number): ServerFeedStatus {
-    const { serverStatus, serverStatusAt } = deps.feedStatusStore.getState()
-    if (serverStatus == null || serverStatusAt == null) {
-      return null
-    }
-
-    if (now - serverStatusAt > SERVER_STATUS_TTL_MS) {
-      return null
-    }
-
-    const { lastMessageAt } = transportStatus
-    if (lastMessageAt != null && lastMessageAt > serverStatusAt) {
-      return null
-    }
-
-    return serverStatus
-  }
-
-  /** Stamp lastMessageAt and republish while a disconnect claim is still showing. */
-  function expireServerClaimOnLiveData() {
-    const current = deps.feedStatusStore.getState()
-    if (current.labelKey !== 'feed.serverDisconnected') {
-      return
-    }
-
-    const receivedAt = Date.now()
-    transportStatus = {
-      ...transportStatus,
-      lastMessageAt:
-        current.serverStatusAt != null && receivedAt <= current.serverStatusAt
-          ? current.serverStatusAt + 1
-          : receivedAt,
-    }
-    publishFeedStatus()
-  }
-
   function deriveLabelKey(serverStatus: ServerFeedStatus): FeedStatusLabelKey {
     if (transportStatus.lastCloseReason === 'offline') {
       return 'feed.offline'
@@ -131,13 +83,15 @@ export function createMarketController(deps: MarketControllerDeps) {
     if (transportStatus.staleLevel === 'slow') {
       return 'feed.slow'
     }
-    if (
-      serverStatus === 'disconnected' &&
-      transportStatus.transport === 'open'
-    ) {
-      return 'feed.serverDisconnected'
+    if (transportStatus.staleLevel === 'dead') {
+      return 'feed.disconnected'
     }
     if (transportStatus.transport === 'open') {
+      if (serverStatus === 'slow') {
+        return 'feed.slow'
+      }
+      // The mock (and a wedged gateway) can send `disconnected` while it is
+      // still pushing tickers and trades. Do not show قطع in that case.
       return 'feed.connected'
     }
     return 'feed.disconnected'
@@ -151,8 +105,8 @@ export function createMarketController(deps: MarketControllerDeps) {
       return 'staleness'
     }
     if (
-      serverStatus === 'disconnected' &&
-      transportStatus.transport === 'open'
+      transportStatus.transport === 'open' &&
+      (serverStatus === 'slow' || serverStatus === 'connected')
     ) {
       return 'server'
     }
@@ -160,8 +114,7 @@ export function createMarketController(deps: MarketControllerDeps) {
   }
 
   function publishFeedStatus() {
-    const now = Date.now()
-    const serverStatus = effectiveServerStatus(now)
+    const serverStatus = deps.feedStatusStore.getState().serverStatus
 
     deps.feedStatusStore.setState({
       transport: transportStatus.transport,
@@ -184,13 +137,11 @@ export function createMarketController(deps: MarketControllerDeps) {
             ask: message.ask,
           })
           scheduleSymbol(message.symbol)
-          expireServerClaimOnLiveData()
           break
 
         case 'greeks':
           deps.symbolStore.applyGreeks(message.symbol, message)
           scheduleSymbol(message.symbol)
-          expireServerClaimOnLiveData()
           break
 
         case 'trade': {
@@ -209,7 +160,6 @@ export function createMarketController(deps: MarketControllerDeps) {
               },
             })
           }
-          expireServerClaimOnLiveData()
           break
         }
 
@@ -225,7 +175,6 @@ export function createMarketController(deps: MarketControllerDeps) {
           // The ack records what the server confirmed; it must never overwrite
           // what the user asked for.
           deps.selectionStore.setState({ confirmed: message.symbols })
-          expireServerClaimOnLiveData()
           break
       }
     },

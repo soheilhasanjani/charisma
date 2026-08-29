@@ -22,13 +22,6 @@ export const MAX_RECONNECT_ATTEMPTS = 12
 /** Close background socket after alt-tab grace — avoids reconnect storms. */
 export const HIDDEN_TAB_GRACE_MS = 30_000
 
-/**
- * How long a server-reported status is trusted. Backstop only: a claim is also
- * dropped as soon as a message arrives after it, since data still flowing
- * contradicts the server saying the feed is down.
- */
-export const SERVER_STATUS_TTL_MS = 10_000
-
 /** How often the liveness watchdog samples silence. */
 export const WATCHDOG_POLL_MS = 1_000
 

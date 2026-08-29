@@ -49,7 +49,6 @@ const fa = {
     manualRetry: 'اتصال ناموفق — تلاش مجدد',
     connecting: 'در حال اتصال…',
     slow: 'اتصال کند',
-    serverDisconnected: 'سرور disconnected گزارش کرد',
     connected: 'متصل',
     disconnected: 'قطع',
   },

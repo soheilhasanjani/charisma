@@ -39,7 +39,6 @@ export type FeedStatusLabelKey =
   | 'feed.manualRetry'
   | 'feed.connecting'
   | 'feed.slow'
-  | 'feed.serverDisconnected'
   | 'feed.connected'
   | 'feed.disconnected'
 

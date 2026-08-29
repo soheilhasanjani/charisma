@@ -8,19 +8,19 @@ export function FeedStatusBadge() {
   const status = useFeedStatus()
 
   function feedStatusVariant() {
-    if (status.staleLevel === 'dead') {
-      return 'destructive'
+    switch (status.labelKey) {
+      case 'feed.offline':
+      case 'feed.watchdog':
+      case 'feed.manualRetry':
+      case 'feed.disconnected':
+        return 'destructive'
+      case 'feed.slow':
+        return 'warning'
+      case 'feed.connecting':
+        return 'outline'
+      default:
+        return 'success'
     }
-
-    if (status.staleLevel === 'slow') {
-      return 'warning'
-    }
-
-    if (status.authority === 'server') {
-      return 'outline'
-    }
-
-    return 'success'
   }
 
   function statusDetail() {

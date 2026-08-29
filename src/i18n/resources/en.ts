@@ -51,7 +51,6 @@ const en = {
     manualRetry: 'Connection failed — retry',
     connecting: 'Connecting…',
     slow: 'Slow connection',
-    serverDisconnected: 'Server reported disconnected',
     connected: 'Connected',
     disconnected: 'Disconnected',
   },
