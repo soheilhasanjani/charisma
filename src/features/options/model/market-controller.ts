@@ -1,3 +1,11 @@
+/**
+ * Translates decoded feed messages into store writes.
+ *
+ * The only place that knows how the wire protocol maps onto application state,
+ * so a protocol change lands here and nowhere else.
+ */
+
+import { SERVER_STATUS_TTL_MS } from '@/core/config/feed-config'
 import type { InboundMarketMessage } from '@/core/realtime/protocol'
 import type { FeedTransportStatus } from '@/core/realtime/socket-client'
 import type { FrameScheduler } from '@/core/scheduler/frame-scheduler'
@@ -5,14 +13,30 @@ import { reconcileSnapshotRow } from '@/features/options/model/snapshot-reconcil
 import type {
   FeedStatusStore,
   HistoryStore,
+  KnownSymbolsStore,
   LastTradeStore,
   SelectionStore,
 } from '@/features/options/model/stores/live-stores'
 import type { SymbolStore } from '@/features/options/model/stores/symbol-store'
-import type { FeedStatusLabelKey } from '@/features/options/model/types'
+import type {
+  FeedAuthority,
+  FeedStatusLabelKey,
+  ServerFeedStatus,
+} from '@/features/options/model/types'
 import type { OptionSnapshot } from '@/features/options/types'
 
 const LAST_TRADE_THROTTLE_MS = 750
+
+const INITIAL_TRANSPORT: FeedTransportStatus = {
+  transport: 'idle',
+  staleLevel: 'fresh',
+  reconnectAttempt: 0,
+  awaitingManualRetry: false,
+  lastCloseReason: null,
+  lastMessageAt: null,
+  subscribedSymbols: [],
+  confirmedSymbols: [],
+}
 
 export type MarketControllerDeps = {
   symbolStore: SymbolStore
@@ -20,58 +44,106 @@ export type MarketControllerDeps = {
   historyStore: HistoryStore
   feedStatusStore: FeedStatusStore
   selectionStore: SelectionStore
+  knownSymbolsStore: KnownSymbolsStore
   scheduler: FrameScheduler
   isSymbolTracked?: (symbol: string) => boolean
 }
 
 export function createMarketController(deps: MarketControllerDeps) {
   let lastTradePublishedAt = 0
-  let knownSymbols: string[] = []
+
+  /**
+   * The real transport snapshot, kept so status derivation never has to invent
+   * one. Deriving the label from a fabricated "healthy" transport silently
+   * discards genuine offline, watchdog and manual-retry states.
+   */
+  let transportStatus: FeedTransportStatus = INITIAL_TRANSPORT
 
   function markSymbolDirty(symbol: string) {
     deps.scheduler.markDirty(symbol)
     deps.symbolStore.markDirty(symbol)
   }
 
-  function deriveFeedLabelKey(
-    transport: FeedTransportStatus,
-    serverStatus: 'connected' | 'slow' | 'disconnected' | null,
-  ): FeedStatusLabelKey {
-    if (transport.lastCloseReason === 'offline') {
+  /**
+   * The mock reports `disconnected` at random while the socket is open and
+   * delivering data, so a server claim is only honoured while it is still
+   * plausible: recent, and not contradicted by a message that arrived after it.
+   */
+  function effectiveServerStatus(now: number): ServerFeedStatus {
+    const { serverStatus, serverStatusAt } = deps.feedStatusStore.getState()
+    if (serverStatus == null || serverStatusAt == null) {
+      return null
+    }
+
+    if (now - serverStatusAt > SERVER_STATUS_TTL_MS) {
+      return null
+    }
+
+    const { lastMessageAt } = transportStatus
+    if (lastMessageAt != null && lastMessageAt > serverStatusAt) {
+      return null
+    }
+
+    return serverStatus
+  }
+
+  function deriveLabelKey(serverStatus: ServerFeedStatus): FeedStatusLabelKey {
+    if (transportStatus.lastCloseReason === 'offline') {
       return 'feed.offline'
     }
-    if (transport.lastCloseReason === 'watchdog') {
+    if (transportStatus.lastCloseReason === 'watchdog') {
       return 'feed.watchdog'
     }
-    if (transport.awaitingManualRetry) {
+    if (transportStatus.awaitingManualRetry) {
       return 'feed.manualRetry'
     }
-    if (transport.transport === 'connecting') {
+    if (transportStatus.transport === 'connecting') {
       return 'feed.connecting'
     }
-    if (transport.staleLevel === 'slow') {
+    if (transportStatus.staleLevel === 'slow') {
       return 'feed.slow'
     }
-    if (serverStatus === 'disconnected' && transport.transport === 'open') {
+    if (
+      serverStatus === 'disconnected' &&
+      transportStatus.transport === 'open'
+    ) {
       return 'feed.serverDisconnected'
     }
-    if (transport.transport === 'open') {
+    if (transportStatus.transport === 'open') {
       return 'feed.connected'
     }
     return 'feed.disconnected'
   }
 
-  function deriveAuthority(
-    transport: FeedTransportStatus,
-    serverStatus: 'connected' | 'slow' | 'disconnected' | null,
-  ): 'transport' | 'server' | 'staleness' {
-    if (transport.staleLevel === 'slow' || transport.staleLevel === 'dead') {
+  function deriveAuthority(serverStatus: ServerFeedStatus): FeedAuthority {
+    if (
+      transportStatus.staleLevel === 'slow' ||
+      transportStatus.staleLevel === 'dead'
+    ) {
       return 'staleness'
     }
-    if (serverStatus === 'disconnected' && transport.transport === 'open') {
+    if (
+      serverStatus === 'disconnected' &&
+      transportStatus.transport === 'open'
+    ) {
       return 'server'
     }
     return 'transport'
+  }
+
+  function publishFeedStatus() {
+    const now = Date.now()
+    const serverStatus = effectiveServerStatus(now)
+
+    deps.feedStatusStore.setState({
+      transport: transportStatus.transport,
+      staleLevel: transportStatus.staleLevel,
+      reconnectAttempt: transportStatus.reconnectAttempt,
+      awaitingManualRetry: transportStatus.awaitingManualRetry,
+      lastCloseReason: transportStatus.lastCloseReason,
+      authority: deriveAuthority(serverStatus),
+      labelKey: deriveLabelKey(serverStatus),
+    })
   }
 
   function shouldTrackHistory(symbol: string) {
@@ -120,74 +192,56 @@ export function createMarketController(deps: MarketControllerDeps) {
 
           if (receivedAt - lastTradePublishedAt >= LAST_TRADE_THROTTLE_MS) {
             lastTradePublishedAt = receivedAt
-            deps.lastTradeStore.set({
-              symbol: message.symbol,
-              price: message.price,
-              size: message.size,
-              side: message.side,
-              time: message.time,
-              receivedAt,
+            deps.lastTradeStore.setState({
+              trade: {
+                symbol: message.symbol,
+                price: message.price,
+                size: message.size,
+                side: message.side,
+                time: message.time,
+                receivedAt,
+              },
             })
-            deps.lastTradeStore.flush()
           }
           break
         }
 
         case 'status':
-          deps.feedStatusStore.update({
+          deps.feedStatusStore.setState({
             serverStatus: message.status,
-            labelKey: deriveFeedLabelKey(
-              {
-                transport: 'open',
-                staleLevel: 'fresh',
-                reconnectAttempt: 0,
-                awaitingManualRetry: false,
-                lastCloseReason: null,
-                lastMessageAt: null,
-                subscribedSymbols: [],
-                confirmedSymbols: [],
-              },
-              message.status,
-            ),
-            authority: 'server',
+            serverStatusAt: Date.now(),
           })
-          deps.feedStatusStore.flush()
+          publishFeedStatus()
           break
 
         case 'subscribed':
-          deps.selectionStore.set(message.symbols)
-          deps.selectionStore.flush()
+          // The ack records what the server confirmed; it must never overwrite
+          // what the user asked for.
+          deps.selectionStore.setState({ confirmed: message.symbols })
           break
       }
     },
 
     applySnapshot(snapshots: OptionSnapshot[]) {
-      knownSymbols = snapshots.map((row) => row.symbol)
-
       for (const row of snapshots) {
         const current = deps.symbolStore.get(row.symbol)
         const next = reconcileSnapshotRow(current, row)
         deps.symbolStore.setRecord(row.symbol, next)
         markSymbolDirty(row.symbol)
       }
+
+      deps.knownSymbolsStore.setState({
+        symbols: snapshots.map((row) => row.symbol),
+      })
     },
 
     getKnownSymbols() {
-      return knownSymbols
+      return deps.knownSymbolsStore.getState().symbols
     },
 
-    updateTransportStatus(transport: FeedTransportStatus) {
-      const serverStatus = deps.feedStatusStore.getSnapshot().serverStatus
-      deps.feedStatusStore.update({
-        transport: transport.transport,
-        staleLevel: transport.staleLevel,
-        reconnectAttempt: transport.reconnectAttempt,
-        awaitingManualRetry: transport.awaitingManualRetry,
-        lastCloseReason: transport.lastCloseReason,
-        authority: deriveAuthority(transport, serverStatus),
-        labelKey: deriveFeedLabelKey(transport, serverStatus),
-      })
-      deps.feedStatusStore.flush()
+    updateTransportStatus(next: FeedTransportStatus) {
+      transportStatus = next
+      publishFeedStatus()
     },
   }
 }

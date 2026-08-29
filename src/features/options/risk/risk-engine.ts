@@ -254,5 +254,3 @@ export function createRiskEngine(options: RiskEngineOptions) {
     },
   }
 }
-
-export type RiskEngine = ReturnType<typeof createRiskEngine>

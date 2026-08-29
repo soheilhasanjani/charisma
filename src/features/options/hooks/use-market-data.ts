@@ -1,8 +1,12 @@
 import { useSyncExternalStore } from 'react'
+import { useStore } from 'zustand'
 
 import { useMarketRuntime } from '@/features/options/hooks/use-market-runtime'
-import type { OptionSnapshot } from '@/features/options/types'
 
+/**
+ * Per-symbol tick data. Subscribes to one key, so a message for another symbol
+ * cannot re-render this row.
+ */
 export function useSymbolRecord(symbol: string) {
   const runtime = useMarketRuntime()
 
@@ -23,22 +27,8 @@ export function useRankedSymbols() {
   )
 }
 
-export function useOptionsTableRows(): OptionSnapshot[] {
-  const runtime = useMarketRuntime()
-
-  return useSyncExternalStore(
-    (listener) => runtime.tableRows.subscribe(listener),
-    () => runtime.tableRows.getSnapshot(),
-    () => runtime.tableRows.getSnapshot(),
-  )
-}
-
 export function useFeedStatus() {
   const runtime = useMarketRuntime()
 
-  return useSyncExternalStore(
-    (listener) => runtime.stores.feedStatus.subscribe(listener),
-    () => runtime.stores.feedStatus.getSnapshot(),
-    () => runtime.stores.feedStatus.getSnapshot(),
-  )
+  return useStore(runtime.stores.feedStatus)
 }

@@ -46,4 +46,48 @@ describe('createEntityStore', () => {
     expect(heard).toEqual(['AAPL'])
     expect(store.flush()).toEqual(new Set(['TSLA']))
   })
+
+  it('notifies whole-store subscribers once per flush, not once per key', () => {
+    const store = createEntityStore<string, number>()
+    const spy = vi.fn()
+
+    store.subscribeAll(spy)
+    for (let index = 0; index < 500; index += 1) {
+      store.set(`SYM_${index}`, index)
+    }
+
+    store.flush()
+
+    expect(spy).toHaveBeenCalledTimes(1)
+  })
+
+  it('flushKeys notifies each dirty key but collapses the global notification', () => {
+    const store = createEntityStore<string, number>()
+    const globalSpy = vi.fn()
+    const heard: string[] = []
+
+    store.subscribeAll(globalSpy)
+    store.subscribe('AAPL', () => heard.push('AAPL'))
+    store.subscribe('TSLA', () => heard.push('TSLA'))
+    store.set('AAPL', 1)
+    store.set('TSLA', 2)
+    store.set('MSFT', 3)
+
+    store.flushKeys(['AAPL', 'TSLA'])
+
+    expect(heard).toEqual(['AAPL', 'TSLA'])
+    expect(globalSpy).toHaveBeenCalledTimes(1)
+    expect(store.flush()).toEqual(new Set(['MSFT']))
+  })
+
+  it('does not notify anyone when a flush has nothing dirty', () => {
+    const store = createEntityStore<string, number>()
+    const globalSpy = vi.fn()
+
+    store.subscribeAll(globalSpy)
+    store.flush()
+    store.flushKeys(['AAPL'])
+
+    expect(globalSpy).not.toHaveBeenCalled()
+  })
 })

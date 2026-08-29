@@ -23,11 +23,3 @@ export function formatPrice(value: number, options: FormatPriceOptions = {}) {
 
   return formatter.format(value)
 }
-
-export function formatPriceCompact(value: number) {
-  return formatPrice(value, { compact: true })
-}
-
-export function formatSignedPrice(value: number) {
-  return formatPrice(value, { signed: true })
-}

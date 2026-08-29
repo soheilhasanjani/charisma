@@ -40,6 +40,10 @@ export function createSymbolStore() {
       store.flushKey(symbol)
     },
 
+    flushKeys(symbols: Iterable<string>) {
+      store.flushKeys(symbols)
+    },
+
     flush() {
       return store.flush()
     },

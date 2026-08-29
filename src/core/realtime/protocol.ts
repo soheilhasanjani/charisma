@@ -55,8 +55,6 @@ export interface SubscribeMessage {
   symbols: string[]
 }
 
-export type OutboundMarketMessage = SubscribeMessage
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }

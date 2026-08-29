@@ -1,13 +1,9 @@
-import { useSyncExternalStore } from 'react'
+import { useStore } from 'zustand'
 
 import { useMarketRuntime } from '@/features/options/hooks/use-market-runtime'
 
 export function useKnownSymbols() {
   const runtime = useMarketRuntime()
 
-  return useSyncExternalStore(
-    (listener) => runtime.subscribeKnownSymbols(listener),
-    () => runtime.getKnownSymbols(),
-    () => runtime.getKnownSymbols(),
-  )
+  return useStore(runtime.stores.knownSymbols, (state) => state.symbols)
 }

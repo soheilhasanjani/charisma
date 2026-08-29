@@ -1,43 +1,109 @@
-import {
-  createEntityStore,
-  createSingletonStore,
-  SINGLETON_KEY,
-} from '@/core/store/create-entity-store'
+/**
+ * Low-frequency market state.
+ *
+ * These slices change at user or connection speed and have a handful of
+ * subscribers each, so they use zustand: familiar to any React developer, ~1.2kb
+ * gzipped, and it removes the manual flush ceremony that keyed batching needs.
+ *
+ * Per-symbol tick data does NOT belong here. zustand re-runs every mounted
+ * selector on every write, which is O(subscribers) per message and unusable at
+ * 5000 symbols, so SymbolStore and HistoryStore stay on createEntityStore's
+ * per-key notification. See docs/adr/0002-store-boundary.md.
+ */
+
+import { createStore, type StoreApi } from 'zustand/vanilla'
+
+import { createEntityStore } from '@/core/store/create-entity-store'
+import { DEFAULT_SORT } from '@/features/options/model/ranking'
 import type {
   FeedStatusRecord,
   HistoryTrade,
   LastTradeRecord,
+  SortState,
   SymbolHistory,
-  ViewportRecord,
 } from '@/features/options/model/types'
 
-export function createLastTradeStore() {
-  const store = createSingletonStore<LastTradeRecord>()
-
-  return {
-    getSnapshot() {
-      return store.get(SINGLETON_KEY) ?? null
-    },
-
-    set(trade: LastTradeRecord) {
-      store.set(SINGLETON_KEY, trade)
-    },
-
-    flush() {
-      store.flushKey(SINGLETON_KEY)
-    },
-
-    subscribe(listener: () => void) {
-      return store.subscribe(SINGLETON_KEY, listener)
-    },
-  }
+export type LastTradeState = {
+  trade: LastTradeRecord | null
 }
 
-export type LastTradeStore = ReturnType<typeof createLastTradeStore>
+export type LastTradeStore = StoreApi<LastTradeState>
+
+export function createLastTradeStore(): LastTradeStore {
+  return createStore<LastTradeState>()(() => ({ trade: null }))
+}
+
+const INITIAL_FEED_STATUS: FeedStatusRecord = {
+  transport: 'idle',
+  staleLevel: 'fresh',
+  serverStatus: null,
+  serverStatusAt: null,
+  reconnectAttempt: 0,
+  awaitingManualRetry: false,
+  lastCloseReason: null,
+  authority: 'transport',
+  labelKey: 'feed.connecting',
+}
+
+export type FeedStatusStore = StoreApi<FeedStatusRecord>
+
+export function createFeedStatusStore(): FeedStatusStore {
+  return createStore<FeedStatusRecord>()(() => INITIAL_FEED_STATUS)
+}
+
+export type SelectionState = {
+  /** What the user asked for. Empty means "no filter" — show every symbol. */
+  intended: string[]
+  /** What the server last acknowledged in a `subscribed` message. */
+  confirmed: string[]
+}
+
+export type SelectionStore = StoreApi<SelectionState>
+
+export function createSelectionStore(): SelectionStore {
+  return createStore<SelectionState>()(() => ({ intended: [], confirmed: [] }))
+}
+
+const EMPTY_VISIBLE: ReadonlySet<string> = new Set<string>()
+
+export type ViewportState = {
+  symbols: string[]
+  /** Precomputed because the scheduler and risk engine read it every frame. */
+  visible: ReadonlySet<string>
+}
+
+export type ViewportStore = StoreApi<ViewportState>
+
+export function createViewportStore(): ViewportStore {
+  return createStore<ViewportState>()(() => ({
+    symbols: [],
+    visible: EMPTY_VISIBLE,
+  }))
+}
+
+export type SortStore = StoreApi<SortState>
+
+export function createSortStore(): SortStore {
+  return createStore<SortState>()(() => DEFAULT_SORT)
+}
+
+export type KnownSymbolsState = {
+  symbols: string[]
+}
+
+export type KnownSymbolsStore = StoreApi<KnownSymbolsState>
+
+export function createKnownSymbolsStore(): KnownSymbolsStore {
+  return createStore<KnownSymbolsState>()(() => ({ symbols: [] }))
+}
 
 const PRICE_HISTORY_CAPACITY = 120
 const TRADE_HISTORY_CAPACITY = 20
 
+/**
+ * Keyed per symbol and written on the tick path, so this one keeps the
+ * per-key store rather than moving to zustand.
+ */
 export function createHistoryStore() {
   const store = createEntityStore<string, SymbolHistory>()
 
@@ -84,96 +150,3 @@ export function createHistoryStore() {
 }
 
 export type HistoryStore = ReturnType<typeof createHistoryStore>
-
-const INITIAL_FEED_STATUS: FeedStatusRecord = {
-  transport: 'idle',
-  staleLevel: 'fresh',
-  serverStatus: null,
-  reconnectAttempt: 0,
-  awaitingManualRetry: false,
-  lastCloseReason: null,
-  authority: 'transport',
-  labelKey: 'feed.connecting',
-}
-
-export function createFeedStatusStore() {
-  const store = createSingletonStore<FeedStatusRecord>()
-  store.set(SINGLETON_KEY, INITIAL_FEED_STATUS)
-
-  return {
-    getSnapshot() {
-      return store.get(SINGLETON_KEY) ?? INITIAL_FEED_STATUS
-    },
-
-    update(patch: Partial<FeedStatusRecord>) {
-      const current = store.get(SINGLETON_KEY) ?? INITIAL_FEED_STATUS
-      store.set(SINGLETON_KEY, { ...current, ...patch })
-    },
-
-    flush() {
-      store.flushKey(SINGLETON_KEY)
-    },
-
-    subscribe(listener: () => void) {
-      return store.subscribe(SINGLETON_KEY, listener)
-    },
-  }
-}
-
-export type FeedStatusStore = ReturnType<typeof createFeedStatusStore>
-
-export function createSelectionStore() {
-  const store = createSingletonStore<string[]>()
-  const emptySelection: string[] = []
-  store.set(SINGLETON_KEY, emptySelection)
-
-  return {
-    getSnapshot() {
-      return store.get(SINGLETON_KEY) ?? emptySelection
-    },
-
-    set(symbols: string[]) {
-      store.set(SINGLETON_KEY, [...symbols])
-    },
-
-    flush() {
-      store.flushKey(SINGLETON_KEY)
-    },
-
-    subscribe(listener: () => void) {
-      return store.subscribe(SINGLETON_KEY, listener)
-    },
-  }
-}
-
-export type SelectionStore = ReturnType<typeof createSelectionStore>
-
-export function createViewportStore() {
-  const store = createSingletonStore<ViewportRecord>()
-  const emptyViewport: ViewportRecord = { symbols: [] }
-  store.set(SINGLETON_KEY, emptyViewport)
-
-  return {
-    getSnapshot() {
-      return store.get(SINGLETON_KEY) ?? emptyViewport
-    },
-
-    getVisibleSymbols() {
-      return new Set(store.get(SINGLETON_KEY)?.symbols ?? [])
-    },
-
-    setSymbols(symbols: string[]) {
-      store.set(SINGLETON_KEY, { symbols: [...symbols] })
-    },
-
-    flush() {
-      store.flushKey(SINGLETON_KEY)
-    },
-
-    subscribe(listener: () => void) {
-      return store.subscribe(SINGLETON_KEY, listener)
-    },
-  }
-}
-
-export type ViewportStore = ReturnType<typeof createViewportStore>

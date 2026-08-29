@@ -1,10 +1,19 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
   createRanking,
   DEFAULT_SORT,
   STABLE_EMPTY_ORDER,
 } from '@/features/options/model/ranking'
+
+function record(symbol: string, last: number) {
+  return {
+    symbol,
+    last: { value: last, revision: 1 },
+    stale: false,
+    flashDirection: null,
+  }
+}
 
 describe('createRanking', () => {
   it('returns a stable empty snapshot reference', () => {
@@ -73,5 +82,40 @@ describe('createRanking', () => {
     expect(second).not.toBe(first)
     expect(second).toEqual(['A', 'B'])
     expect(notifyCount).toBe(2)
+  })
+
+  describe('under a sustained feed', () => {
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('still recomputes when invalidate is called on every frame', () => {
+      vi.useFakeTimers()
+
+      const records = new Map([
+        ['A', record('A', 2)],
+        ['B', record('B', 1)],
+      ])
+      const ranking = createRanking({
+        getSymbols: () => ['A', 'B'],
+        getRecord: (symbol) => records.get(symbol),
+        getSort: () => ({ column: 'last', direction: 'asc' }),
+        isOrderLocked: () => false,
+      })
+
+      ranking.invalidate()
+      expect(ranking.getSnapshot()).toEqual(['B', 'A'])
+
+      records.set('A', record('A', 0))
+
+      // A debounce would have its timer reset by each of these and never fire,
+      // leaving the order frozen forever.
+      for (let frame = 0; frame < 120; frame += 1) {
+        ranking.invalidate()
+        vi.advanceTimersByTime(16)
+      }
+
+      expect(ranking.getSnapshot()).toEqual(['A', 'B'])
+    })
   })
 })

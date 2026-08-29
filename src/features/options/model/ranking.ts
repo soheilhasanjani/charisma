@@ -97,6 +97,12 @@ export function createRanking(options: RankingOptions) {
     notify()
   }
 
+  /**
+   * Throttle, not debounce. `invalidate()` is called on every scheduler flush, so
+   * resetting a timer on each call would keep pushing it back and the order would
+   * never recompute at all under a sustained feed. Leading edge fires
+   * immediately, then at most once per window.
+   */
   function scheduleRecompute(force = false) {
     if (force) {
       if (timer != null) {
@@ -108,12 +114,18 @@ export function createRanking(options: RankingOptions) {
     }
 
     if (timer != null) {
-      clearTimeout(timer)
+      // A window is already open; the trailing edge will pick this up.
+      pending = true
+      return
     }
+
+    recompute(false)
 
     timer = setTimeout(() => {
       timer = null
-      recompute(false)
+      if (pending) {
+        recompute(false)
+      }
     }, RANKING_THROTTLE_MS)
   }
 
@@ -144,8 +156,6 @@ export function createRanking(options: RankingOptions) {
     },
   }
 }
-
-export type Ranking = ReturnType<typeof createRanking>
 
 export const DEFAULT_SORT: SortState = {
   column: 'symbol',

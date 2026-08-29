@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useStore } from 'zustand'
 
 import { useKnownSymbols } from '@/features/options/hooks/use-known-symbols'
 import { useMarketRuntime } from '@/features/options/hooks/use-market-runtime'
@@ -13,40 +14,68 @@ import {
 
 const SUBSCRIBE_DEBOUNCE_MS = 300
 
+/**
+ * The user's symbol filter.
+ *
+ * Intent lives in `selection.intended` and nowhere else; the URL is a mirror for
+ * shareable links, not a second source of truth. The server's `subscribed` ack
+ * lands in `selection.confirmed` so an echo can never overwrite what was asked
+ * for.
+ */
 export function useSymbolFilter() {
   const runtime = useMarketRuntime()
   const knownSymbols = useKnownSymbols()
-  const [selected, setSelected] = useState(readSymbolFilterFromUrl)
+  const selected = useStore(runtime.stores.selection, (state) => state.intended)
   const previousSubscriptionRef = useRef<string[]>([])
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const seededFromUrlRef = useRef(false)
 
-  const setFilter = useCallback((next: string[]) => {
-    const unique = [...new Set(next)]
-    setSelected(unique)
-    writeSymbolFilterToUrl(unique)
-  }, [])
+  const setFilter = useCallback(
+    (next: readonly string[]) => {
+      const unique = [...new Set(next)]
+      runtime.stores.selection.setState({ intended: unique })
+      writeSymbolFilterToUrl(unique)
+    },
+    [runtime],
+  )
 
-  const toggleSymbol = useCallback((symbol: string) => {
-    setSelected((current) => {
-      const next = current.includes(symbol)
-        ? current.filter((entry) => entry !== symbol)
-        : [...current, symbol]
-      writeSymbolFilterToUrl(next)
-      return next
-    })
-  }, [])
+  // The URL seeds intent once, on first mount, before any user interaction.
+  useEffect(() => {
+    if (seededFromUrlRef.current) return
+    seededFromUrlRef.current = true
 
-  const toggleGroup = useCallback((symbols: readonly string[]) => {
-    setSelected((current) => {
+    const fromUrl = readSymbolFilterFromUrl()
+    if (fromUrl.length > 0) {
+      runtime.stores.selection.setState({ intended: fromUrl })
+    }
+  }, [runtime])
+
+  const toggleSymbol = useCallback(
+    (symbol: string) => {
+      const current = runtime.stores.selection.getState().intended
+      setFilter(
+        current.includes(symbol)
+          ? current.filter((entry) => entry !== symbol)
+          : [...current, symbol],
+      )
+    },
+    [runtime, setFilter],
+  )
+
+  const toggleGroup = useCallback(
+    (symbols: readonly string[]) => {
+      const current = runtime.stores.selection.getState().intended
       const currentSet = new Set(current)
       const allSelected = symbols.every((symbol) => currentSet.has(symbol))
-      const next = allSelected
-        ? current.filter((symbol) => !symbols.includes(symbol))
-        : [...new Set([...current, ...symbols])]
-      writeSymbolFilterToUrl(next)
-      return next
-    })
-  }, [])
+
+      setFilter(
+        allSelected
+          ? current.filter((symbol) => !symbols.includes(symbol))
+          : [...current, ...symbols],
+      )
+    },
+    [runtime, setFilter],
+  )
 
   const clearAll = useCallback(() => {
     setFilter([])
@@ -72,7 +101,7 @@ export function useSymbolFilter() {
       }
 
       previousSubscriptionRef.current = next
-      runtime.subscribe(next)
+      runtime.requestSubscription(next)
     }, SUBSCRIBE_DEBOUNCE_MS)
 
     return () => {

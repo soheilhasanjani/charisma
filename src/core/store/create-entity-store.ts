@@ -11,6 +11,7 @@ export interface EntityStore<K, V> {
   markDirty(key: K): void
   flush(): ReadonlySet<K>
   flushKey(key: K): void
+  flushKeys(keys: Iterable<K>): void
   subscribe(key: K, listener: EntityStoreListener): () => void
   subscribeAll(listener: EntityStoreListener): () => void
   keys(): IterableIterator<K>
@@ -24,12 +25,20 @@ export function createEntityStore<K, V>(): EntityStore<K, V> {
 
   function notifyKey(key: K) {
     const keyListeners = listeners.get(key)
-    if (keyListeners) {
-      for (const listener of keyListeners) {
-        listener()
-      }
-    }
+    if (!keyListeners) return
 
+    for (const listener of keyListeners) {
+      listener()
+    }
+  }
+
+  /**
+   * Global subscribers are notified once per flush, never once per key. Firing
+   * them per key would make a 500-symbol flush re-run every whole-store consumer
+   * 500 times in a single frame, which defeats the batching the scheduler exists
+   * to provide.
+   */
+  function notifyAll() {
     for (const listener of globalListeners) {
       listener()
     }
@@ -53,9 +62,14 @@ export function createEntityStore<K, V>(): EntityStore<K, V> {
       const flushed = new Set(dirty)
       dirty.clear()
 
+      if (flushed.size === 0) {
+        return flushed
+      }
+
       for (const key of flushed) {
         notifyKey(key)
       }
+      notifyAll()
 
       return flushed
     },
@@ -63,6 +77,21 @@ export function createEntityStore<K, V>(): EntityStore<K, V> {
     flushKey(key) {
       if (!dirty.delete(key)) return
       notifyKey(key)
+      notifyAll()
+    },
+
+    flushKeys(keys) {
+      let flushedAny = false
+
+      for (const key of keys) {
+        if (!dirty.delete(key)) continue
+        notifyKey(key)
+        flushedAny = true
+      }
+
+      if (flushedAny) {
+        notifyAll()
+      }
     },
 
     subscribe(key, listener) {
@@ -92,13 +121,4 @@ export function createEntityStore<K, V>(): EntityStore<K, V> {
       return records.keys()
     },
   }
-}
-
-/** Sentinel key for single-slot stores (LastTradeStore, FeedStatusStore). */
-export const SINGLETON_KEY = Symbol('singleton')
-
-export type SingletonStore<V> = EntityStore<typeof SINGLETON_KEY, V>
-
-export function createSingletonStore<V>(): SingletonStore<V> {
-  return createEntityStore<typeof SINGLETON_KEY, V>()
 }

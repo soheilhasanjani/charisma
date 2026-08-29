@@ -53,19 +53,19 @@ export type FeedStatusLabelKey =
   | 'feed.connected'
   | 'feed.disconnected'
 
+export type ServerFeedStatus = 'connected' | 'slow' | 'disconnected' | null
+
 export type FeedStatusRecord = {
   transport: 'idle' | 'connecting' | 'open' | 'closed'
   staleLevel: 'fresh' | 'slow' | 'dead'
-  serverStatus: 'connected' | 'slow' | 'disconnected' | null
+  serverStatus: ServerFeedStatus
+  /** When the server last reported its status, so a stale claim can expire. */
+  serverStatusAt: number | null
   reconnectAttempt: number
   awaitingManualRetry: boolean
   lastCloseReason: string | null
   authority: FeedAuthority
   labelKey: FeedStatusLabelKey
-}
-
-export type ViewportRecord = {
-  symbols: string[]
 }
 
 export type SortDirection = 'asc' | 'desc'
