@@ -6,8 +6,6 @@ import { LocaleSwitcher } from '@/components/locale-switcher'
 import { ModeToggle } from '@/components/mode-toggle'
 import { DirectionProvider } from '@/components/primitives/direction'
 import { ThemeProvider } from '@/components/theme-provider'
-import { FeedStatusBadge } from '@/features/options/components/feed-status-badge'
-import { LastTradeBanner } from '@/features/options/components/last-trade-banner'
 import { OptionsPage } from '@/features/options/pages/options-page'
 import { MarketRuntimeProvider } from '@/features/options/providers/market-runtime-provider'
 import { LocaleProvider, useLocale } from '@/i18n/locale-provider'
@@ -28,14 +26,12 @@ function AppShell() {
     <DirectionProvider direction={direction}>
       <AppLayout
         brand={t('app.brand')}
-        statusStart={<FeedStatusBadge />}
         headerEnd={
           <>
             <LocaleSwitcher />
             <ModeToggle />
           </>
         }
-        banner={<LastTradeBanner />}
       >
         <OptionsPage />
       </AppLayout>

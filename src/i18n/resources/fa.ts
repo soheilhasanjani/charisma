@@ -71,8 +71,6 @@ const fa = {
   trade: {
     latest: 'آخرین معامله:',
     none: 'هنوز معامله‌ای ثبت نشده',
-    pause: 'توقف نمایش معاملات',
-    resume: 'ادامه نمایش معاملات',
     sideBuy: 'خرید',
     sideSell: 'فروش',
     sideBuyLabel: 'Buy',

@@ -1,5 +1,4 @@
 import { act, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 
 import { FeedStatusBadge } from '@/features/options/components/feed-status-badge'
@@ -71,8 +70,7 @@ describe('LastTradeBanner', () => {
     expect(screen.getByText(fa.trade.none)).toBeInTheDocument()
   })
 
-  it('freezes the displayed trade while paused', async () => {
-    const user = userEvent.setup()
+  it('shows the newest trade as it arrives', async () => {
     const runtime = runtimeWithIdleTransport()
     renderWithProviders(<LastTradeBanner />, { runtime })
 
@@ -91,8 +89,6 @@ describe('LastTradeBanner', () => {
       expect(screen.getByText('10:00:00')).toBeInTheDocument()
     })
 
-    await user.click(screen.getByRole('button', { name: fa.trade.pause }))
-
     runtime.stores.lastTrade.setState({
       trade: {
         symbol: 'TSLA_20250117_220_P',
@@ -104,9 +100,10 @@ describe('LastTradeBanner', () => {
       },
     })
 
-    // The paused banner keeps the frozen trade so the value can be read.
-    expect(screen.getByText('10:00:00')).toBeInTheDocument()
-    expect(screen.queryByText('10:00:05')).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText('10:00:05')).toBeInTheDocument()
+    })
+    expect(screen.queryByText('10:00:00')).not.toBeInTheDocument()
   })
 })
 

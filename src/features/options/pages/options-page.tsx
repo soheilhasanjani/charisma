@@ -11,6 +11,7 @@ import {
   useFilteredSymbols,
   useSymbolFilter,
 } from '@/features/options/hooks/use-symbol-filter'
+import { OptionsLayout } from '@/features/options/layouts/options-layout'
 import { getUserFacingErrorMessage } from '@/lib/http/errors'
 
 const SymbolDetailDialog = lazy(async () => {
@@ -54,7 +55,7 @@ export function OptionsPage() {
       : undefined
 
   return (
-    <>
+    <OptionsLayout>
       <section className="p-4 sm:p-6">
         <div className="flex flex-col gap-4">
           {!isPending && !isError ? (
@@ -113,6 +114,6 @@ export function OptionsPage() {
           onOpenChange={handleDetailOpenChange}
         />
       </Suspense>
-    </>
+    </OptionsLayout>
   )
 }

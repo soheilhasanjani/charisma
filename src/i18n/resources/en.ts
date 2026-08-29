@@ -73,8 +73,6 @@ const en = {
   trade: {
     latest: 'Last trade:',
     none: 'No trades yet',
-    pause: 'Pause trade banner',
-    resume: 'Resume trade banner',
     sideBuy: 'buy',
     sideSell: 'sell',
     sideBuyLabel: 'Buy',
